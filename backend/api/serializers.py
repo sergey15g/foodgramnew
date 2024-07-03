@@ -19,7 +19,8 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name')
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'avatar']
+        read_only_fields = ['email']
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -59,6 +60,7 @@ class CustomUserSerializer(UserSerializer):
             'first_name',
             'last_name',
             'is_subscribed',
+            'avatar',
         )
         extra_kwargs = {
             'id': {'required': True},
@@ -99,7 +101,8 @@ class CreateUserSerializer(UserSerializer):
         # Хеширование пароля перед сохранением
         validated_data['password'] = make_password(validated_data.get('password'))
         return super().create(validated_data)
-    
+
+
 class UserOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -110,6 +113,7 @@ class UserOutputSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
         )
+
 
 class SubscribeSerializer(CustomUserSerializer):
     recipes_count = SerializerMethodField()

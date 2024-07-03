@@ -4,17 +4,11 @@ from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
+    email = models.EmailField('email address', max_length=254, unique=True)
+    avatar = models.ImageField(upload_to='avatars/', default='avatars/default_avatar.png')
+
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = [
-        'username',
-        'first_name',
-        'last_name',
-    ]
-    email = models.EmailField(
-        'email address',
-        max_length=254,
-        unique=True,
-    )
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
         ordering = ['id']

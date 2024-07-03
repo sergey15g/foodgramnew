@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from foodgram.settings import HOST
 from recipes.models import (Favourite, Ingredient, IngredientInRecipe, Recipe,
                             ShoppingCart, Tag)
 from rest_framework import status
@@ -79,6 +80,13 @@ class RecipeViewSet(ModelViewSet):
             return self.add_to(ShoppingCart, request.user, pk)
         else:
             return self.delete_from(ShoppingCart, request.user, pk)
+        
+    @action(
+        detail=True,
+        methods=['get'],
+    )
+    def get_link(self, request, pk):
+        return Response({"short-link": f"{HOST}/recipes/{pk}"}, status=status.HTTP_200_OK)
 
     def add_to(self, model, user, pk):
         if model.objects.filter(user=user, recipe__id=pk).exists():

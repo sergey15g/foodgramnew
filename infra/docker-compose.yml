@@ -1,17 +1,50 @@
-version: '3.3'
+name: foodgram
+
 services:
 
   frontend:
-    container_name: foodgram-front
+    container_name: front
     build: ../frontend
     volumes:
       - ../frontend/:/app/result_build/
+
+  database:
+    container_name: db
+    image: postgres:16
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: postgres
+
+  api:
+    container_name: api
+    depends_on:
+      - database
+    image: api
+    restart: always
+    env_file:
+      - ../.env
+    build: ../backend
+    command: gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ../backend/media:/app/media
+      - media:/app/media
+      
   nginx:
-    container_name: foodgram-proxy
+    container_name: proxy
+    depends_on:
+      - api
+      - frontend
     image: nginx:1.25.4-alpine
     ports:
-      - "80:80"
+      - 800:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
+      - ../docs/:/usr/share/nginx/html/docs/
+      - media:/app/media
+
+
+volumes:
+    data:
+        driver: local
+    media:

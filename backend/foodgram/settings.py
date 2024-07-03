@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-u8!z!1vf3t-k4(vi*m33)oau=hdaqe+^@qoyr8-abwj0*o=pj0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["api", "127.0.0.1", "localhost"]
 
 
 # Application definition
@@ -160,7 +160,7 @@ STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
-MEDIA_URL = '/media/'
+MEDIA_URL = 'http://127.0.0.1:800/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CSV_DIR = os.path.join(BASE_DIR, 'data')
@@ -169,3 +169,5 @@ CSV_DIR = os.path.join(BASE_DIR, 'data')
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+HOST = "http://127.0.0.1:800"
