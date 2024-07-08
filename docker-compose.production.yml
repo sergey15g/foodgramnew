@@ -25,11 +25,10 @@ services:
     command: cp -r /app/build/. /frontend_static/
     volumes:
       - static_volume:/frontend_static
-  gateway:
-    image: sergey15g/foodgramnew_gateway  # Качаем с Docker Hub
-    env_file: .env
+  nginx:
+    image: nginx:1.21.3-alpine
+    ports:
+      - 9000:80
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media
-    ports:
-      - 9000:80
