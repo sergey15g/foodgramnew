@@ -171,7 +171,7 @@ jobs:
           cd foodgramnew
           # Выполняет pull образов с Docker Hub
           sudo docker compose -f docker-compose.production.yml pull
-          # Перезапускает все контейнеры в Docker Compose
+          # Перезапускает все контейнеры в Docker 
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
           # Выполняет миграции и сбор статики
