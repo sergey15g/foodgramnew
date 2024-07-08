@@ -1,25 +1,17 @@
-from api.pagination import CustomPagination
-from api.permissions import IsAdminOrReadOnly
-from api.serializers import (
-    CustomUserCreateSerializer,
-    CustomUserSerializer,
-    SubscribeSerializer,
-)
-from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from foodgram.settings import MEDIA_ROOT
-from rest_framework import permissions, status
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from users.models import User
 
 from .models import Subscribe
-
-# User = get_user_model()
+from api.pagination import CustomPagination
+from api.permissions import IsAdminOrReadOnly
+from api.serializers import (CustomUserCreateSerializer, CustomUserSerializer,
+                             SubscribeSerializer)
+from users.models import User
 
 
 class CustomUserViewSet(UserViewSet):
@@ -38,7 +30,7 @@ class CustomUserViewSet(UserViewSet):
         user: User = request.user
         if request.method in ["PUT", "PATCH"]:
             avatar = request.FILES.get("avatar")
-        
+
             if avatar:
                 avatar.name = f"{user.id}_{avatar.name}"
                 user.avatar = avatar
@@ -55,7 +47,8 @@ class CustomUserViewSet(UserViewSet):
         elif request.method == "DELETE":
             user.avatar = "avatars/default_avatar.png"
             user.save()
-            return Response({"avatar": user.avatar.url}, status=status.HTTP_200_OK)
+            return Response({"avatar": user.avatar.url},
+                            status=status.HTTP_200_OK)
         else:
             return Response(
                 {"detail": "Метод не разрешен."},
@@ -96,11 +89,13 @@ class CustomUserViewSet(UserViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             Subscribe.objects.create(user=user, author=author)
-            serializer = self.get_serializer(author, context={"request": request})
+            serializer = self.get_serializer(author,
+                                             context={"request": request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
-            subscription = Subscribe.objects.filter(user=user, author=author).first()
+            subscription = Subscribe.objects.filter(
+                user=user, author=author).first()
             if subscription:
                 subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
@@ -115,7 +110,8 @@ class CustomUserViewSet(UserViewSet):
         user = request.user
         queryset = User.objects.filter(subscribing__user=user)
         pages = self.paginate_queryset(queryset)
-        serializer = SubscribeSerializer(pages, many=True, context={"request": request})
+        serializer = SubscribeSerializer(pages, many=True,
+                                         context={"request": request})
         return self.get_paginated_response(serializer.data)
 
     def get_permissions(self):

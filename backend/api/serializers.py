@@ -1,16 +1,15 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
-from django.db.models import F
-from django.shortcuts import get_object_or_404
-from djoser.serializers import UserCreateSerializer, UserSerializer
-from drf_extra_fields.fields import Base64ImageField
-from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
-from rest_framework import status, serializers
 from django.contrib.auth.hashers import make_password
+from django.db.models import F
+from djoser.serializers import UserCreateSerializer
+from drf_extra_fields.fields import Base64ImageField
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import IntegerField, SerializerMethodField
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.serializers import ModelSerializer
+
+from recipes.models import Ingredient, IngredientInRecipe, Recipe, Tag
 from users.models import Subscribe
 
 User = get_user_model()
@@ -19,7 +18,8 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'avatar']
+        fields = ['id', 'username', 'email', 'first_name',
+                  'last_name', 'avatar']
         read_only_fields = ['email']
 
 
@@ -36,16 +36,17 @@ class CustomUserCreateSerializer(UserCreateSerializer):
     def validate(self, attrs):
         # Проверяем, что обязательные поля first_name и last_name указаны
         if 'first_name' not in attrs:
-            raise serializers.ValidationError({'first_name': 'This field is required.'})
+            raise serializers.ValidationError({'first_name':
+                                               'This field is required.'})
         if 'last_name' not in attrs:
-            raise serializers.ValidationError({'last_name': 'This field is required.'})
+            raise serializers.ValidationError({'last_name':
+                                               'This field is required.'})
         return attrs
 
     def create(self, validated_data):
         # Создаем пользователя с зашифрованным паролем
         user = User.objects.create_user(**validated_data)
         return user
-
 
 
 class CustomUserSerializer(UserSerializer):
@@ -75,7 +76,7 @@ class CustomUserSerializer(UserSerializer):
     def to_representation(self, instance):
         # Проверяем, является ли пользователь анонимным
         if isinstance(instance, User) and instance.is_anonymous:
-            # Если пользователь анонимный, удаляем поле 'email' из сериализованных данных
+            # Если пользователь анонимный, удаляем поле 'email' из данных
             representation = super().to_representation(instance)
             representation.pop('email', None)
             return representation
@@ -95,11 +96,13 @@ class CreateUserSerializer(UserSerializer):
             'last_name',
             'password',
         )
-        read_only_fields = ('id',)  # Поле 'id' будет доступно только для чтения
+        # Поле 'id' будет доступно только для чтения
+        read_only_fields = ('id',)
 
     def create(self, validated_data):
         # Хеширование пароля перед сохранением
-        validated_data['password'] = make_password(validated_data.get('password'))
+        validated_data['password'] = make_password(
+            validated_data.get('password'))
         return super().create(validated_data)
 
 
@@ -243,7 +246,7 @@ class RecipeWriteSerializer(ModelSerializer):
         ingredients = value
         if not ingredients:
             raise ValidationError({
-            'ingredients': 'Нужен хотя бы один ингредиент!'
+                'ingredients': 'Нужен хотя бы один ингредиент!'
             })
         ingredients_list = []
         for item in ingredients:
@@ -251,24 +254,27 @@ class RecipeWriteSerializer(ModelSerializer):
                 ingredient = Ingredient.objects.get(id=item['id'])
             except Ingredient.DoesNotExist:
                 raise ValidationError({
-                'ingredients': f'Ингредиент с id={item["id"]} не существует'
+                    'ingredients': (
+                        f'Ингредиент с id={item["id"]} не существует'
+                    )
                 })
             if ingredient in ingredients_list:
                 raise ValidationError({
-                'ingredients': 'Ингридиенты не могут повторяться!'
+                    'ingredients': 'Ингридиенты не могут повторяться!'
                 })
             if int(item['amount']) <= 0:
                 raise ValidationError({
-                'amount': 'Количество ингредиента должно быть больше 0!'
+                    'amount': 'Количество ингредиента должно быть больше 0!'
                 })
             ingredients_list.append(ingredient)
         return value
-    
+
     def validate(self, data):
         if not data.get('image'):
             raise ValidationError({'image': 'Поле image не может быть пустым'})
         if 'ingredients' not in data:
-            raise ValidationError({'ingredients': 'Поле ingredients является обязательным'})
+            raise ValidationError({'ingredients':
+                                   'Поле ingredients является обязательным'})
         return data
 
     def validate_tags(self, value):
@@ -278,11 +284,13 @@ class RecipeWriteSerializer(ModelSerializer):
         tags_list = []
         for tag in tags:
             if tag in tags_list:
-                raise ValidationError({'tags': 'Теги должны быть уникальными!'})
+                raise ValidationError({'tags': (
+                    'Теги должны быть уникальными!'
+                )
+                })
             tags_list.append(tag)
         return value
 
-    #@transaction.atomic
     def create_ingredients_amounts(self, ingredients, recipe):
         IngredientInRecipe.objects.bulk_create(
             [IngredientInRecipe(
@@ -292,7 +300,6 @@ class RecipeWriteSerializer(ModelSerializer):
             ) for ingredient in ingredients]
         )
 
-    @transaction.atomic
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
@@ -301,17 +308,18 @@ class RecipeWriteSerializer(ModelSerializer):
         self.create_ingredients_amounts(recipe=recipe, ingredients=ingredients)
         return recipe
 
-    #@transaction.atomic
     def update(self, instance, validated_data):
-    # Убедитесь, что валидированные данные содержат поля 'tags' и 'ingredients'
         tags = validated_data.pop('tags', None)
         ingredients = validated_data.pop('ingredients', None)
-    
     # Если отсутствует поле 'ingredients' или 'tags', возвращаем ошибку 400
         if ingredients is None:
-            raise ValidationError({'ingredients': 'Поле ingredients обязательно для обновления рецепта'})
+            raise ValidationError({'ingredients':
+                                   'Обязательно для обновления рецепта'})
         if tags is None:
-            raise ValidationError({'tags': 'Поле tags обязательно для обновления рецепта'})
+            raise ValidationError({'tags': (
+                'Обязательно для обновления рецепта'
+            )
+            })
 
     # Обновляем экземпляр рецепта без полей 'tags' и 'ingredients'
         instance = super().update(instance, validated_data)
@@ -319,12 +327,12 @@ class RecipeWriteSerializer(ModelSerializer):
     # Обновляем теги и ингредиенты
         instance.tags.set(tags)
         instance.ingredients.clear()
-        self.create_ingredients_amounts(recipe=instance, ingredients=ingredients)
+        self.create_ingredients_amounts(recipe=instance,
+                                        ingredients=ingredients)
 
     # Сохраняем изменения
         instance.save()
         return instance
-
 
     def to_representation(self, instance):
         request = self.context.get('request')

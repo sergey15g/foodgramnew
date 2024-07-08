@@ -5,7 +5,8 @@ from django.db.models import UniqueConstraint
 
 class User(AbstractUser):
     email = models.EmailField('email address', max_length=254, unique=True)
-    avatar = models.ImageField(upload_to='avatars/', default='avatars/default_avatar.png')
+    avatar = models.ImageField(upload_to='avatars/',
+                               default='avatars/default_avatar.png')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -36,7 +37,8 @@ class Subscribe(models.Model):
     class Meta:
         ordering = ['-id']
         constraints = [
-            UniqueConstraint(fields=['user', 'author'], name='unique_subscription')
+            UniqueConstraint(fields=['user', 'author'],
+                             name='unique_subscription')
         ]
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'

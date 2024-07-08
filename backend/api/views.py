@@ -4,17 +4,13 @@ from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from foodgram.settings import HOST
-from recipes.models import (Favourite, Ingredient, IngredientInRecipe, Recipe,
-                            ShoppingCart, Tag)
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND
+from rest_framework.status import HTTP_400_BAD_REQUEST
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from django.http import Http404
 
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import CustomPagination
@@ -22,6 +18,9 @@ from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipeReadSerializer,
                           RecipeShortSerializer, RecipeWriteSerializer,
                           TagSerializer)
+from foodgram.settings import HOST
+from recipes.models import (Favourite, Ingredient, IngredientInRecipe, Recipe,
+                            ShoppingCart, Tag)
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
@@ -52,11 +51,13 @@ class RecipeViewSet(ModelViewSet):
         if self.request.method in SAFE_METHODS:
             return RecipeReadSerializer
         return RecipeWriteSerializer
-    
+
     def get_object(self):
         obj = super().get_object()
-        if self.request.method not in SAFE_METHODS and obj.author != self.request.user:
-            raise PermissionDenied("You do not have permission to perform this action.")
+        if self.request.method not in SAFE_METHODS \
+                and obj.author != self.request.user:
+            raise PermissionDenied(
+                "You do not have permission to perform this action.")
         return obj
 
     @action(
@@ -80,17 +81,19 @@ class RecipeViewSet(ModelViewSet):
             return self.add_to(ShoppingCart, request.user, pk)
         else:
             return self.delete_from(ShoppingCart, request.user, pk)
-        
+
     @action(
         detail=True,
         methods=['get'],
     )
     def get_link(self, request, pk):
-        return Response({"short-link": f"{HOST}/recipes/{pk}"}, status=status.HTTP_200_OK)
+        return Response({"short-link": f"{HOST}/recipes/{pk}"},
+                        status=status.HTTP_200_OK)
 
     def add_to(self, model, user, pk):
         if model.objects.filter(user=user, recipe__id=pk).exists():
-            return Response({'errors': 'Рецепт уже добавлен!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': 'Рецепт уже добавлен!'},
+                            status=status.HTTP_400_BAD_REQUEST)
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
@@ -98,17 +101,18 @@ class RecipeViewSet(ModelViewSet):
         model.objects.create(user=user, recipe=recipe)
         serializer = RecipeShortSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     def delete_from(self, model, user, pk):
         # Проверяем, существует ли рецепт с данным ID
         recipe = get_object_or_404(Recipe, pk=pk)
 
         try:
-        # Пытаемся найти запись в корзине для данного пользователя и рецепта
+
             cart_item = model.objects.get(user=user, recipe=recipe)
         except model.DoesNotExist:
-        # Если запись в корзине не найдена, возвращаем ошибку 400
-            return Response({'errors': 'Рецепт не был добавлен в корзину!'}, status=status.HTTP_400_BAD_REQUEST)
+
+            return Response({'errors': 'Рецепт не был добавлен в корзину!'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
     # Удаляем рецепт из корзины
         cart_item.delete()

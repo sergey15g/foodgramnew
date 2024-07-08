@@ -112,7 +112,8 @@ class IngredientInRecipe(models.Model):
 
     def __str__(self):
         return (
-            f'{self.ingredient.name} ({self.ingredient.measurement_unit}) - {self.amount} '
+            f'{self.ingredient.name} ({self.ingredient.measurement_unit}) -'
+            f'{self.amount} '
         )
 
 
@@ -136,7 +137,8 @@ class Favourite(models.Model):
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
         constraints = [
-            UniqueConstraint(fields=['user', 'recipe'], name='unique_favourite')
+            UniqueConstraint(fields=['user', 'recipe'],
+                             name='unique_favourite')
         ]
 
     def __str__(self):
@@ -163,7 +165,8 @@ class ShoppingCart(models.Model):
         verbose_name = 'Корзина покупок'
         verbose_name_plural = 'Корзина покупок'
         constraints = [
-            UniqueConstraint(fields=['user', 'recipe'], name='unique_shopping_cart')
+            UniqueConstraint(fields=['user', 'recipe'],
+                             name='unique_shopping_cart')
         ]
 
     def __str__(self):
