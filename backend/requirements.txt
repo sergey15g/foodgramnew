@@ -10,5 +10,6 @@ flake8-isort==6.0.0
 flake8==6.0.0
 gunicorn>=20.1.0
 Pillow>=10.0.0
+psycopg2-binary>=2.9.6
 
 
