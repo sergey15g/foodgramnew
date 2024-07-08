@@ -28,7 +28,7 @@ services:
   nginx:
     image: nginx:1.21.3-alpine
     ports:
-      - 9000:80
+      - 9100:80
     volumes:
       - static_volume:/staticfiles/
       - media_volume:/media
