@@ -1,34 +1,47 @@
-# docker-compose.production.yml
-version: '3'
+version: '3.8'
+
+services:
+  backend:
+    image: sergey15g/foodgramnew_backend:latest
+    container_name: foodgram_backend
+    environment:
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: django_db
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+    volumes:
+      - backend_data:/app
+    depends_on:
+      - nginx
+
+  frontend:
+    image: sergey15g/foodgramnew_frontend:latest
+    container_name: foodgram_frontend
+    environment:
+      NODE_ENV: production
+    volumes:
+      - frontend_data:/app
+    depends_on:
+      - nginx
+
+  nginx:
+    image: nginx:latest
+    container_name: foodgram_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - backend_static:/backend_static
+      - frontend_data:/usr/share/nginx/html
+    depends_on:
+      - backend
+      - frontend
 
 volumes:
-  pg_data_production:
-  static_volume:
-  media_volume:
-
-# Всё отличие — заменяем build на image и указываем, какой образ использовать
-services:
-  db:
-    image: postgres:13.10
-    env_file: .env
-    volumes:
-      - pg_data_production:/var/lib/postgresql/data
-  backend:
-    image: sergey15g/foodgramnew_backend
-    env_file: .env
-    volumes:
-      - static_volume:/backend_static
-      - media_volume:/media
-  frontend:
-    image: sergey15g/foodgramnew_frontend  # Качаем с Docker Hub
-    env_file: .env
-    command: cp -r /app/build/. /frontend_static/
-    volumes:
-      - static_volume:/frontend_static
-  nginx:
-    image: nginx:1.21.3-alpine
-    ports:
-      - 80:80
-    volumes:
-      - static_volume:/staticfiles/
-      - media_volume:/media
+  backend_data:
+  frontend_data:
+  backend_static:
