@@ -42,7 +42,7 @@ class CustomUserViewSet(UserViewSet):
             return Response(
                 {"detail": "Необходимо предоставить файл аватара."},
                 status=status.HTTP_200_OK,
-                )
+            )
         if request.method == "DELETE":
             user.avatar = "avatars/default_avatar.png"
             user.save()
@@ -51,7 +51,7 @@ class CustomUserViewSet(UserViewSet):
         return Response(
             {"detail": "Метод не разрешен."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
-            )
+        )
 
     @action(
         detail=True,
@@ -61,10 +61,8 @@ class CustomUserViewSet(UserViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return CustomUserCreateSerializer
-        
         if self.action == "subscribe":
             return SubscribeSerializer
-        
         return super().get_serializer_class()
 
     @action(
@@ -102,7 +100,7 @@ class CustomUserViewSet(UserViewSet):
             return Response(
                 {"errors": "Подписка не найдена."},
                 status=status.HTTP_400_BAD_REQUEST,
-                )
+            )
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
