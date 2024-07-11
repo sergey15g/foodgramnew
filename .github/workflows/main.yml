@@ -141,6 +141,8 @@ jobs:
             sudo docker compose -f docker-compose.production.yml up -d
             # Подождать, чтобы контейнеры запустились
             sleep 30
+            # Создание директории для статики
+            sudo docker compose -f docker-compose.production.yml exec backend mkdir -p /backend_static/static/
             # Выполняет миграции и сбор статики
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
