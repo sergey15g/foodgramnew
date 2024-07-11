@@ -39,20 +39,18 @@ class CustomUserViewSet(UserViewSet):
                     {"status": "Аватарка присвоена"},
                     status=status.HTTP_200_OK,
                 )
-            else:
-                return Response(
-                    {"detail": "Необходимо предоставить файл аватара."},
-                    status=status.HTTP_200_OK,
+            return Response(
+                {"detail": "Необходимо предоставить файл аватара."},
+                status=status.HTTP_200_OK,
                 )
-        elif request.method == "DELETE":
+        if request.method == "DELETE":
             user.avatar = "avatars/default_avatar.png"
             user.save()
             return Response({"avatar": user.avatar.url},
                             status=status.HTTP_200_OK)
-        else:
-            return Response(
-                {"detail": "Метод не разрешен."},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        return Response(
+            {"detail": "Метод не разрешен."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
 
     @action(

@@ -54,8 +54,10 @@ class RecipeViewSet(ModelViewSet):
 
     def get_object(self):
         obj = super().get_object()
-        if self.request.method not in SAFE_METHODS \
-                and obj.author != self.request.user:
+        if (
+            self.request.method not in SAFE_METHODS
+                and obj.author != self.request.user
+        ):
             raise PermissionDenied(
                 "You do not have permission to perform this action.")
         return obj
