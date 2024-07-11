@@ -97,10 +97,10 @@ class CustomUserViewSet(UserViewSet):
             if subscription:
                 subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response(
-                {"errors": "Подписка не найдена."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {"errors": "Подписка не найдена."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @action(detail=False, permission_classes=[IsAuthenticated])
     def subscriptions(self, request):
