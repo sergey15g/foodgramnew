@@ -1,66 +1,46 @@
-name: foodgram
+version: '3.8'
 
 services:
+  backend:
+    image: sergey15g/foodgramnew_backend:latest
+    container_name: backend
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: django_db
+      DB_HOST: "${DB_HOST}"  # Здесь указывается хост PostgreSQL сервера
+      DB_PORT: 5432
+      SECRET_KEY: "${SECRET_KEY}"
+      DEBUG: "${DEBUG}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS}"
+    depends_on:
+      - postgres
 
   frontend:
     image: sergey15g/foodgramnew_frontend:latest
-    volumes:
-      - ../frontend/:/app/result_build/
+    container_name: frontend
     depends_on:
       - backend
 
-  database:
-    container_name: db
-    image: postgres:13
-    restart: always
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    env_file:
-      - ./.env
-
-  backend:
-    image: sergey15g/foodgramnew_backend:latest
-    restart: always
-    volumes:
-      - data_value:/code/data/
-      - static_value:/code/static/
-      - media_value:/code/media/
-    depends_on:
-      - db
-    env_file:
-      - ./.env
-
-  api:
-    container_name: api
-    depends_on:
-      - database
-    image: api
-    restart: always
-    env_file:
-      - ../.env
-    build: ../backend
-    command: gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - ../backend/media:/app/media
-      - media:/app/media
-      
   nginx:
-    container_name: proxy
-    depends_on:
-      - api
-      - frontend
-    image: nginx:1.25.4-alpine
+    image: nginx:latest
+    container_name: nginx
     ports:
-      - 800:80
+      - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../frontend/build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/docs/
-      - static_value:/var/html/static/
-      - media_value:/var/html/media/
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
+      - frontend
 
-volumes:
-  postgres_data:
-  static_value:
-  media_value:
-  data_value:
+  postgres:
+    image: postgres:13.10
+    container_name: postgres
+    environment:
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: django_db
+    ports:
+      - "5432:5432"
