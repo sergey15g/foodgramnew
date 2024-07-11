@@ -3,45 +3,43 @@ version: '3.8'
 services:
   backend:
     image: sergey15g/foodgramnew_backend:latest
-    container_name: foodgram_backend
+    container_name: backend
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: django_user
       POSTGRES_PASSWORD: django_password
       POSTGRES_DB: django_db
-      DB_HOST: ${DB_HOST}
+      DB_HOST: postgres  # Используйте имя сервиса postgres
       DB_PORT: 5432
-      SECRET_KEY: ${SECRET_KEY}
-      DEBUG: ${DEBUG}
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
-    volumes:
-      - backend_data:/app
+      SECRET_KEY: "${SECRET_KEY}"
+      DEBUG: "${DEBUG}"
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS}"
     depends_on:
-      - nginx
+      - postgres
 
   frontend:
     image: sergey15g/foodgramnew_frontend:latest
-    container_name: foodgram_frontend
-    environment:
-      NODE_ENV: production
-    volumes:
-      - frontend_data:/app
+    container_name: frontend
     depends_on:
-      - nginx
+      - backend
 
   nginx:
     image: nginx:latest
-    container_name: foodgram_nginx
+    container_name: nginx
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - backend_static:/backend_static
-      - frontend_data:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       - backend
-      - frontend
 
-volumes:
-  backend_data:
-  frontend_data:
-  backend_static:
+  postgres:
+    image: postgres:13.10
+    container_name: postgres
+    environment:
+      POSTGRES_USER: django_user
+      POSTGRES_PASSWORD: django_password
+      POSTGRES_DB: django_db
+    ports:
+      - "5432:5432"
