@@ -24,6 +24,7 @@ jobs:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     needs: tests
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -48,6 +49,7 @@ jobs:
           tags: sergey15g/foodgramnew_frontend:latest
 
   deploy:
+    if: ${{ github.ref }} == 'main'
     runs-on: ubuntu-latest
     needs: build_and_push_to_docker_hub
     steps:
@@ -61,7 +63,7 @@ jobs:
           script: |
             sudo docker pull sergey15g/foodgramnew_backend:latest
             sudo docker pull sergey15g/foodgramnew_frontend:latest
-            cd /foodgramnew/infra/  # Убедитесь, что путь правильный
+            cd infra/  # Убедитесь, что путь правильный
             sudo docker-compose down
       - name: docker-compose up
         uses: appleboy/ssh-action@master
