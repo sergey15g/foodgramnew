@@ -61,8 +61,10 @@ class CustomUserViewSet(UserViewSet):
     def get_serializer_class(self):
         if self.action == "create":
             return CustomUserCreateSerializer
-        elif self.action == "subscribe":
+        
+        if self.action == "subscribe":
             return SubscribeSerializer
+        
         return super().get_serializer_class()
 
     @action(
@@ -97,10 +99,9 @@ class CustomUserViewSet(UserViewSet):
             if subscription:
                 subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response(
-                    {"errors": "Подписка не найдена."},
-                    status=status.HTTP_400_BAD_REQUEST,
+            return Response(
+                {"errors": "Подписка не найдена."},
+                status=status.HTTP_400_BAD_REQUEST,
                 )
 
     @action(detail=False, permission_classes=[IsAuthenticated])
