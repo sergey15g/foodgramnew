@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "0259abca-15a6-42d8-9739-ab848f4f7348",
+		"_postman_id": "5af19dc6-dd3f-42f1-ac53-33bb3a82df28",
 		"name": "diploma",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "26235208"
+		"_exporter_id": "16131548"
 	},
 	"item": [
 		{
@@ -1709,16 +1709,27 @@
 									"listen": "test",
 									"script": {
 										"exec": [
+											"const responseSchema = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"        \"avatar\": {\"type\": \"string\"}",
+											"    },",
+											"    \"required\": [\"avatar\"],",
+											"    \"additionalProperties\": false,",
+											"};",
+											"",
 											"pm.test(\"Статус-код ответа должен быть 200\", function () {",
 											"    pm.expect(",
 											"        pm.response.status,",
 											"        \"Запрос зарегистрированного пользователя должен вернуть ответ со статус-кодом 200\"",
 											"    ).to.be.eql(\"OK\");",
 											"});",
+											"pm.test('Структура ответа должна соответствовать ожидаемой', function () {",
+											"    pm.response.to.have.jsonSchema(responseSchema);",
+											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -1741,14 +1752,13 @@
 								"method": "PUT",
 								"header": [],
 								"body": {
-									"mode": "formdata",
-									"formdata": [
-										{
-											"key": "avatar",
-											"type": "file",
-											"src": "postman-cloud:///1ef3772b-f8b4-46b0-8d42-fd0736f11bff"
+									"mode": "raw",
+									"raw": "{\n  \"avatar\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
 										}
-									]
+									}
 								},
 								"url": {
 									"raw": "{{baseUrl}}/api/users/me/avatar/",
@@ -2355,6 +2365,67 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "set_avatar_empty_body // User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Статус-код ответа должен быть 400\", function () {",
+											"    pm.expect(",
+											"        pm.response.status,",
+											"        \"Если в запросе на добавление аватара отсутствует поле `avatar` - должен вернуться ответ со статусом 400\"",
+											"    ).to.be.eql(\"Bad Request\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "Token {{userToken}}",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "Authorization",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/users/me/avatar/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"me",
+										"avatar",
+										""
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -2371,13 +2442,12 @@
 											"pm.test(\"Статус-код ответа должен быть 204\", function () {",
 											"    pm.expect(",
 											"        pm.response.status,",
-											"        \"Запрос зарегистрированного пользователя должен вернуть ответ со статус-кодом 200\"",
-											"    ).to.be.eql(\"OK\");",
+											"        \"Запрос зарегистрированного пользователя должен вернуть ответ со статус-кодом 204\"",
+											"    ).to.be.eql(\"No Content\");",
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -2409,6 +2479,82 @@
 										"users",
 										"me",
 										"avatar",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "check_avatar_is_deleted // User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const responseData = pm.response.json();",
+											"const responseSchema = {",
+											"    \"type\": \"object\",",
+											"    \"properties\": {",
+											"        \"id\": {\"type\": \"number\"},",
+											"        \"username\": {\"type\": \"string\"},",
+											"        \"first_name\": {\"type\": \"string\"},",
+											"        \"last_name\": {\"type\": \"string\"},",
+											"        \"email\": {\"type\": \"string\"},",
+											"        \"is_subscribed\": {\"type\": \"boolean\"},",
+											"        \"avatar\": {\"type\": [\"string\", \"null\"]}",
+											"    },",
+											"    \"required\": [\"id\", \"username\", \"first_name\", \"last_name\", \"email\", \"is_subscribed\", \"avatar\"],",
+											"    \"additionalProperties\": false,",
+											"};",
+											"",
+											"pm.test(\"Статус-код ответа должен быть 200\", function () {",
+											"    pm.expect(",
+											"        pm.response.status,",
+											"        \"Запрос зарегистрированного пользователя должен вернуть ответ со статус-кодом 200\"",
+											"    ).to.be.eql(\"OK\");",
+											"});",
+											"pm.test('Структура ответа должна соответствовать ожидаемой', function () {",
+											"    pm.response.to.have.jsonSchema(responseSchema);",
+											"});",
+											"pm.test(\"Поле `avatar` должно быть пустым\", function () {",
+											"    pm.expect(",
+											"        (responseData[\"avatar\"] === null || responseData[\"avatar\"] === \"\"), ",
+											"        \"Убедитесь, что после корректного запроса на удаление аватара в ответе на запрос к данным пользователя в поле `avatar` вернётся `null` или пустая строка\"",
+											"    ).to.be.true;",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "apikey",
+									"apikey": [
+										{
+											"key": "value",
+											"value": "Token {{userToken}}",
+											"type": "string"
+										},
+										{
+											"key": "key",
+											"value": "Authorization",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/users/me/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"me",
 										""
 									]
 								}
@@ -2463,7 +2609,6 @@
 											"        \"properties\": {",
 											"            \"id\": {\"type\": \"number\"},",
 											"            \"name\": {\"type\": \"string\"},",
-											"            \"color\": {\"type\": \"string\"},",
 											"            \"slug\": {\"type\": \"string\"},",
 											"        },",
 											"        \"required\": [\"id\", \"name\", \"slug\"],",
@@ -2481,8 +2626,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -2521,7 +2665,7 @@
 											"        \"properties\": {",
 											"            \"id\": {\"type\": \"number\"},",
 											"            \"name\": {\"type\": \"string\"},",
-											"            \"color\": {\"type\": \"string\"},",
+											"",
 											"            \"slug\": {\"type\": \"string\"},",
 											"        },",
 											"        \"required\": [\"id\", \"name\", \"slug\"],",
@@ -2549,8 +2693,7 @@
 											"    pm.collectionVariables.set('thirdTagSlug', responseData[2].slug);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -2599,7 +2742,6 @@
 											"    \"properties\": {",
 											"        \"id\": {\"type\": \"number\"},",
 											"        \"name\": {\"type\": \"string\"},",
-											"        \"color\": {\"type\": \"string\"},",
 											"        \"slug\": {\"type\": \"string\"},",
 											"    },",
 											"    \"required\": [\"id\", \"name\", \"slug\"],",
@@ -2616,8 +2758,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -2655,7 +2796,6 @@
 											"    \"properties\": {",
 											"        \"id\": {\"type\": \"number\"},",
 											"        \"name\": {\"type\": \"string\"},",
-											"        \"color\": {\"type\": \"string\"},",
 											"        \"slug\": {\"type\": \"string\"},",
 											"    },",
 											"    \"required\": [\"id\", \"name\", \"slug\"],",
@@ -2672,8 +2812,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -3122,21 +3261,18 @@
 											"        \"Запрос зарегистрированного пользователя должен вернуть ответ со статус-кодом 200\"",
 											"    ).to.be.eql(\"OK\");",
 											"});",
-											"",
-											"pm.collectionVariables.set(\"firstIndredientId\", responseData[0].id);",
-											"pm.collectionVariables.set('ingredientNameFirstLatter', responseData[0].name.slice(0,1))",
-											"pm.collectionVariables.set(\"secondIndredientId\", responseData[1].id);",
-											"",
 											"pm.test('Структура ответа должна соответствовать ожидаемой', function () {",
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"    pm.expect(",
 											"        responseData.length >= 2,",
 											"        \"Создайте в БД как минимум два ингредиента для корректной работы коллекции запросов\"",
-											"    );",
+											"    )",
+											"    pm.collectionVariables.set(\"firstIndredientId\", responseData[0].id);",
+											"    pm.collectionVariables.set('ingredientNameFirstLatter', responseData[0].name.slice(0,1))",
+											"    pm.collectionVariables.set(\"secondIndredientId\", responseData[1].id);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -3718,7 +3854,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -3781,8 +3916,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -3831,7 +3965,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -3894,8 +4027,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -3944,7 +4076,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4007,8 +4138,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4057,7 +4187,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4120,8 +4249,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4170,7 +4298,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4233,8 +4360,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4347,7 +4473,6 @@
 											"                            \"properties\": {",
 											"                                \"id\": {\"type\": \"number\"},",
 											"                                \"name\": {\"type\": \"string\"},",
-											"                                \"color\": {\"type\": \"string\"},",
 											"                                \"slug\": {\"type\": \"string\"},",
 											"                            },",
 											"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4414,8 +4539,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4467,7 +4591,6 @@
 											"                            \"properties\": {",
 											"                                \"id\": {\"type\": \"number\"},",
 											"                                \"name\": {\"type\": \"string\"},",
-											"                                \"color\": {\"type\": \"string\"},",
 											"                                \"slug\": {\"type\": \"string\"},",
 											"                            },",
 											"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4534,8 +4657,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4599,7 +4721,6 @@
 											"                            \"properties\": {",
 											"                                \"id\": {\"type\": \"number\"},",
 											"                                \"name\": {\"type\": \"string\"},",
-											"                                \"color\": {\"type\": \"string\"},",
 											"                                \"slug\": {\"type\": \"string\"},",
 											"                            },",
 											"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4677,8 +4798,7 @@
 											"    }",
 											");"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4748,7 +4868,6 @@
 											"                            \"properties\": {",
 											"                                \"id\": {\"type\": \"number\"},",
 											"                                \"name\": {\"type\": \"string\"},",
-											"                                \"color\": {\"type\": \"string\"},",
 											"                                \"slug\": {\"type\": \"string\"},",
 											"                            },",
 											"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -4833,8 +4952,7 @@
 											"    }",
 											");"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -4904,7 +5022,6 @@
 											"                            \"properties\": {",
 											"                                \"id\": {\"type\": \"number\"},",
 											"                                \"name\": {\"type\": \"string\"},",
-											"                                \"color\": {\"type\": \"string\"},",
 											"                                \"slug\": {\"type\": \"string\"},",
 											"                            },",
 											"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -5008,8 +5125,7 @@
 											"        ).to.be.true;",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -5073,7 +5189,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -5132,8 +5247,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -5188,7 +5302,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -5247,8 +5360,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -5317,8 +5429,7 @@
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -5341,7 +5452,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/api/recipes/{{firstRecipeId}}/get_link/",
+									"raw": "{{baseUrl}}/api/recipes/{{firstRecipeId}}/get-link/",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -5349,7 +5460,7 @@
 										"api",
 										"recipes",
 										"{{firstRecipeId}}",
-										"get_link",
+										"get-link",
 										""
 									]
 								}
@@ -5383,8 +5494,7 @@
 											"});",
 											""
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -5395,7 +5505,7 @@
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "{{baseUrl}}/api/recipes/{{firstRecipeId}}/get_link/",
+									"raw": "{{baseUrl}}/api/recipes/{{firstRecipeId}}/get-link/",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -5403,7 +5513,7 @@
 										"api",
 										"recipes",
 										"{{firstRecipeId}}",
-										"get_link",
+										"get-link",
 										""
 									]
 								}
@@ -5433,7 +5543,6 @@
 											"                \"properties\": {",
 											"                    \"id\": {\"type\": \"number\"},",
 											"                    \"name\": {\"type\": \"string\"},",
-											"                    \"color\": {\"type\": \"string\"},",
 											"                    \"slug\": {\"type\": \"string\"},",
 											"                },",
 											"                \"required\": [\"id\", \"name\", \"slug\"],",
@@ -5492,8 +5601,7 @@
 											"    pm.response.to.have.jsonSchema(responseSchema);",
 											"});"
 										],
-										"type": "text/javascript",
-										"packages": {}
+										"type": "text/javascript"
 									}
 								}
 							],
@@ -8844,11 +8952,11 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Статус-код ответа должен быть 400\", function () {",
+											"pm.test(\"Статус-код ответа должен быть 404\", function () {",
 											"    pm.expect(",
 											"        pm.response.status,",
-											"        \"При попытке добавить несуществующий рецепт в корзину должен вернуться ответ со статусом 400\"",
-											"    ).to.be.eql(\"Bad Request\");",
+											"        \"При попытке добавить несуществующий рецепт в корзину должен вернуться ответ со статусом 404\"",
+											"    ).to.be.eql(\"Not Found\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -9106,11 +9214,11 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Статус-код ответа должен быть 400\", function () {",
+											"pm.test(\"Статус-код ответа должен быть 404\", function () {",
 											"    pm.expect(",
 											"        pm.response.status,",
-											"        \"При попытке добавить несуществующий рецепт в избранное должен вернуться ответ со статусом 400\"",
-											"    ).to.be.eql(\"Bad Request\");",
+											"        \"При попытке добавить несуществующий рецепт в избранное должен вернуться ответ со статусом 404\"",
+											"    ).to.be.eql(\"Not Found\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -9377,7 +9485,6 @@
 									"                            \"properties\": {",
 									"                                \"id\": {\"type\": \"number\"},",
 									"                                \"name\": {\"type\": \"string\"},",
-									"                                \"color\": {\"type\": \"string\"},",
 									"                                \"slug\": {\"type\": \"string\"},",
 									"                            },",
 									"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -9445,8 +9552,7 @@
 									"});",
 									""
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9504,7 +9610,6 @@
 									"                            \"properties\": {",
 									"                                \"id\": {\"type\": \"number\"},",
 									"                                \"name\": {\"type\": \"string\"},",
-									"                                \"color\": {\"type\": \"string\"},",
 									"                                \"slug\": {\"type\": \"string\"},",
 									"                            },",
 									"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -9588,8 +9693,7 @@
 									"    }",
 									");"
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -9659,7 +9763,6 @@
 									"                            \"properties\": {",
 									"                                \"id\": {\"type\": \"number\"},",
 									"                                \"name\": {\"type\": \"string\"},",
-									"                                \"color\": {\"type\": \"string\"},",
 									"                                \"slug\": {\"type\": \"string\"},",
 									"                            },",
 									"                            \"required\": [\"id\", \"name\", \"slug\"],",
@@ -9727,8 +9830,7 @@
 									"});",
 									""
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -10247,7 +10349,8 @@
 													"    ).to.be.eql(\"Unauthorized\");",
 													"});"
 												],
-												"type": "text/javascript"
+												"type": "text/javascript",
+												"packages": {}
 											}
 										}
 									],
@@ -10258,14 +10361,14 @@
 										"method": "DELETE",
 										"header": [],
 										"url": {
-											"raw": "{{baseUrl}}/api/recipes/{{recipeId}}/favorite/",
+											"raw": "{{baseUrl}}/api/recipes/{{firstRecipeId}}/favorite/",
 											"host": [
 												"{{baseUrl}}"
 											],
 											"path": [
 												"api",
 												"recipes",
-												"{{recipeId}}",
+												"{{firstRecipeId}}",
 												"favorite",
 												""
 											]
@@ -10937,7 +11040,7 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://127.0.0.1:800",
+			"value": "http://127.0.0.1:8000",
 			"type": "string"
 		},
 		{
@@ -11004,82 +11107,6 @@
 			"key": "thirdUserUsername",
 			"value": "\"third-user-username\"",
 			"type": "string"
-		},
-		{
-			"key": "userId",
-			"value": ""
-		},
-		{
-			"key": "secondUserId",
-			"value": ""
-		},
-		{
-			"key": "thirdUserId",
-			"value": ""
-		},
-		{
-			"key": "userToken",
-			"value": ""
-		},
-		{
-			"key": "secondUserToken",
-			"value": ""
-		},
-		{
-			"key": "firstIndredientId",
-			"value": ""
-		},
-		{
-			"key": "ingredientNameFirstLatter",
-			"value": ""
-		},
-		{
-			"key": "secondIndredientId",
-			"value": ""
-		},
-		{
-			"key": "firstTagId",
-			"value": ""
-		},
-		{
-			"key": "firstTagSlug",
-			"value": ""
-		},
-		{
-			"key": "secondTagId",
-			"value": ""
-		},
-		{
-			"key": "secondTagSlug",
-			"value": ""
-		},
-		{
-			"key": "thirdTagId",
-			"value": ""
-		},
-		{
-			"key": "thirdTagSlug",
-			"value": ""
-		},
-		{
-			"key": "firstRecipeId",
-			"value": ""
-		},
-		{
-			"key": "secondRecipeId",
-			"value": ""
-		},
-		{
-			"key": "thirdRecipeId",
-			"value": ""
-		},
-		{
-			"key": "fourthRecipeId",
-			"value": ""
-		},
-		{
-			"key": "fifthRecipeId",
-			"value": ""
 		}
 	]
 }
