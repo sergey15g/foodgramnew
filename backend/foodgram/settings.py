@@ -47,7 +47,7 @@ SECRET_KEY = 'django-insecure-8knw5q1(#ci0xt&47_tn5pnfbz(ed7m=77)&p*@#tm%e*(i+sd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '0.0.0.0', 'host.docker.internal', '127.0.0.1']
 
 
 # Application definition
@@ -166,7 +166,7 @@ CSV_DIR = os.path.join(BASE_DIR, 'data')
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'UTC'
 
@@ -179,6 +179,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

@@ -31,7 +31,7 @@ class Favorite(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user} добавил рецепт "{self.recipe}" в избранное'
+        return f'{self.recipe} теперь в избранном у {self.user} '
 
 
 class Recipe(models.Model):
@@ -56,7 +56,7 @@ class Recipe(models.Model):
 
 
 class Subscription(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
     class Meta:
@@ -65,7 +65,7 @@ class Subscription(models.Model):
         verbose_name_plural = 'Subscriptions'
 
     def __str__(self):
-        return f'{self.user.username} subscribed to {self.recipe.name}'
+        return f'{self.user.username} подписан на {self.recipe.name}'
 
 
 class RecipeIngredient(models.Model):

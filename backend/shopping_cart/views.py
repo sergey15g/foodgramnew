@@ -1,11 +1,20 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from .models import ShoppingCart
 from .serializers import ShoppingCartSerializer, ShoppingCartCreateSerializer
-from recipes.models import Recipe  # Предполагается, что модель Recipe находится в приложении recipes
+from recipes.models import Recipe
+import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from django.http import FileResponse
+from django.db.models import Sum
+
+FILENAME = 'shopping_cart.pdf'
+
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     queryset = ShoppingCart.objects.all()
@@ -22,7 +31,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return ShoppingCart.objects.filter(user=self.request.user)
 
-    @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart')
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='shopping_cart')
     def shopping_cart(self, request, pk=None):
         try:
             recipe = Recipe.objects.get(id=pk)
@@ -43,3 +52,37 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 return Response({'detail': 'Recipe not in shopping cart'}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart')
+    def download_shopping_cart(self, request):
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        shopping_cart = (
+            request.user.shopping_cart.recipe.values(
+                'ingredients__name',
+                'ingredients__measurement_unit'
+            ).annotate(amount=Sum('recipe__amount')).order_by()
+        )
+
+        if shopping_cart:
+            elements.append(Paragraph('Список покупок:', styles['Heading1']))
+            elements.append(Spacer(1, 12))
+
+            for index, recipe in enumerate(shopping_cart, start=1):
+                text = f'{index}. {recipe["ingredients__name"]} - {recipe["amount"]} {recipe["ingredients__measurement_unit"]}.'
+                elements.append(Paragraph(text, styles['Normal']))
+                elements.append(Spacer(1, 12))
+        else:
+            elements.append(Paragraph('Список покупок пуст!', styles['Heading1']))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename=FILENAME)
+
+
+class ShoppingCartReadViewSet(viewsets.ModelViewSet):
+    queryset = ShoppingCart.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]

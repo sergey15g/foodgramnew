@@ -2,12 +2,15 @@ import base64
 from io import BytesIO
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from .serializers import UserSerializer, UserRegistrationSerializer, UserDetailSerializer, SetPasswordSerializer, SubscriptionSerializer
+from .serializers import UserSerializer, UserRegistrationSerializer, UserDetailSerializer, SetPasswordSerializer
+from recipes.serializers import SubscriptionSerializer, CustomUserSerializer
+from recipes.serializers import SubscribeSerializer
 from .models import Subscription
 from django.core.files.storage import default_storage
 
@@ -15,16 +18,16 @@ User = get_user_model()
 
 
 class UserPagination(PageNumberPagination):
-    page_size = 1
+    page_size = 6
     page_size_query_param = 'limit'
 
-    def get_paginated_response(self, data):
-        return Response({
-            'count': self.page.paginator.count,
-            'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data
-        })
+    # def get_paginated_response(self, data):
+    #     return Response({
+    #         'count': self.page.paginator.count,
+    #         'next': self.get_next_link(),
+    #         'previous': self.get_previous_link(),
+    #         'results': data
+    #     })
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -43,6 +46,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return SetPasswordSerializer
         if self.action in ['avatar']:
             return UserDetailSerializer
+        if self.action == 'subscribe':
+            return SubscribeSerializer
         return UserSerializer
 
     def get_permissions(self):
@@ -118,32 +123,51 @@ class UserViewSet(viewsets.ModelViewSet):
                 user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='subscribe')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='subscribe')
     def subscribe(self, request, pk=None):
-        subscriber = request.user
-        target_user = self.get_object()
+        user = request.user
+        author = get_object_or_404(User, id=pk)
+        # recipes_limit = request.query_params.get('recipes_limit', None)
 
-        if subscriber == target_user:
-            return Response({"detail": "You cannot subscribe to yourself."}, status=status.HTTP_400_BAD_REQUEST)
+        if user == author:
+            return Response(
+                {"errors": "Нельзя подписаться на самого себя."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        subscription, created = Subscription.objects.get_or_create(user=subscriber, subscribed_to=target_user)
-
-        if created:
-            serializer = SubscriptionSerializer(subscription)
+        if request.method == "POST":
+            if Subscription.objects.filter(user=user, subscribed_to=author).exists():
+                return Response(
+                    {"errors": "Вы уже подписаны на этого пользователя."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            subscription = Subscription.objects.create(user=user, subscribed_to=author)
+            # if recipes_limit is not None:
+            #     subscription.recipes_limit = int(recipes_limit)
+            #     subscription.save()
+            serializer = self.get_serializer(author, context={"request": request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"detail": "Already subscribed."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if request.method == "DELETE":
+            subscription = Subscription.objects.filter(user=user, subscribed_to=author).first()
+            if subscription:
+                subscription.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response(
+                    {"errors": "Подписка не найдена."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='subscriptions')
     def subscriptions(self, request, *args, **kwargs):
         user = request.user
-        subscriptions = Subscription.objects.filter(user=user)
-        
-        # Применение пагинации
-        page = self.paginate_queryset(subscriptions)
-        if page is not None:
-            serializer = SubscriptionSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        
-        serializer = SubscriptionSerializer(subscriptions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        queryset = User.objects.filter(subscribers__user=user)
+        pages = self.paginate_queryset(queryset)
+        serializer = SubscribeSerializer(pages, many=True, context={"request": request})
+        return self.get_paginated_response(serializer.data)
+
+
+    # def get_permissions(self):
+    #     if self.action == "me":
+    #         return [IsAuthenticated()]
+    #     return super().get_permissions()

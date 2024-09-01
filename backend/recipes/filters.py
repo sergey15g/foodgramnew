@@ -13,7 +13,13 @@ class RecipeFilter(django_filters.FilterSet):
 
     class Meta:
         model = Recipe
-        fields = ['tags']
+        fields = ['tags', 'author',]
+    
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        user = self.request.user
+        if value and not user.is_anonymous:
+            return queryset.filter(shopping_cart__user=user)
+        return queryset
 
 
 class TagFilter(filters.FilterSet):

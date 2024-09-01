@@ -4,15 +4,27 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Recipe, Ingredient
-from .serializers import RecipeSerializer, IngredientSerializer, RecipeLimitedFieldsSerializer
+from .models import Recipe, Ingredient, Favorite
+from shopping_cart.models import ShoppingCart
+from .serializers import RecipeSerializer, IngredientSerializer, RecipeLimitedFieldsSerializer, RecipeUpdateIngredientSerializer, FavoriteRecipeSerializer
+from shopping_cart.serializers import ShoppingCartSerializer, ShoppingCartCreateSerializer
 from .pagination import RecipePagination
 from .filters import RecipeFilter, TagFilter
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError, PermissionDenied
 import logging
+import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from django.http import FileResponse
+from django.db.models import Sum
 
 logger = logging.getLogger(__name__)
+
+pdfmetrics.registerFont(TTFont('Times-Roman', 'times.ttf'))
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -22,7 +34,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = RecipePagination
     filter_backends = [DjangoFilterBackend]
     # filterset_fields = ['tags']
-    # filterset_class = RecipeFilter
+    filterset_class = RecipeFilter
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -36,6 +48,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if 'tags' in self.request.query_params:
             return RecipeLimitedFieldsSerializer
+        
+        elif self.action in ['update', 'partial_update']:
+            return RecipeUpdateIngredientSerializer
+        
+        # elif self.action in ['destroy']:
+        #     return RecipeUpdateIngredientSerializer
         return super().get_serializer_class()
 
     def get_filterset_class(self):
@@ -87,7 +105,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response({'short-link': link}, status=status.HTTP_200_OK)
     
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
+        partial = kwargs.pop('partial', True)
         instance = self.get_object()
 
         # Проверка, является ли текущий пользователь автором рецепта
@@ -103,6 +121,68 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"detail": "Method not allowed."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    def perform_destroy(self, instance):
+        instance.delete()
+    
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='shopping_cart')
+    def shopping_cart(self, request, pk=None):
+        try:
+            recipe = Recipe.objects.get(id=pk)
+        except Recipe.DoesNotExist:
+            return Response({'detail': 'Recipe not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = request.user
+
+        if request.method == 'POST':
+            shopping_cart, created = ShoppingCart.objects.get_or_create(user=user, recipe=recipe)
+            serializer = ShoppingCartSerializer(shopping_cart)
+            return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+        elif request.method == 'DELETE':
+            shopping_cart = ShoppingCart.objects.filter(user=user, recipe=recipe)
+            if shopping_cart.exists():
+                shopping_cart.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({'detail': 'Recipe not in shopping cart'}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart')
+    def download_shopping_cart(self, request):
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+        styles = getSampleStyleSheet()
+        styles['Normal'].fontName = 'Times-Roman'  # Установка шрифта
+        elements = []
+
+        shopping_cart_items = request.user.shopping_cart.all()
+        recipes = [item.recipe for item in shopping_cart_items]
+
+        ingredients = Recipe.objects.filter(id__in=[recipe.id for recipe in recipes]).values(
+            'ingredients__name',
+            'ingredients__measurement_unit'
+        ).annotate(amount=Sum('recipeingredient__amount')).order_by()
+
+        if ingredients:
+            elements.append(Paragraph('Список покупок:', styles['Heading1']))
+            elements.append(Spacer(1, 12))
+
+            for index, ingredient in enumerate(ingredients, start=1):
+                text = f'{index}. {ingredient["ingredients__name"]} - {ingredient["amount"]} {ingredient["ingredients__measurement_unit"]}.'
+                elements.append(Paragraph(text, styles['Normal']))
+                elements.append(Spacer(1, 12))
+        else:
+            elements.append(Paragraph('Список покупок пуст!', styles['Heading1']))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename='shopping_cart.pdf')
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
@@ -143,3 +223,42 @@ class IngredientViewSet(viewsets.ModelViewSet):
             {"detail": "Method not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+    
+    @action(detail=True, methods=['post'])
+    def favorite(self, request, pk=None):
+        instance = self.get_object()
+        request.user.favorite_recipe.recipe.add(instance)
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def unfavorite(self, request, pk=None):
+        instance = self.get_object()
+        request.user.favorite_recipe.recipe.remove(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FavoriteRecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'create' or self.action == 'destroy':
+            return FavoriteRecipeSerializer
+        return super().get_serializer_class()
+
+    def create(self, request, *args, **kwargs):
+        instance = self.get_object()
+        _, created = Favorite.objects.get_or_create(user=request.user, recipe=instance)
+        if created:
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"detail": "Recipe is already in favorites."}, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        favorite = Favorite.objects.filter(user=request.user, recipe=instance).first()
+        if favorite:
+            favorite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "Recipe is not in favorites."}, status=status.HTTP_400_BAD_REQUEST)
