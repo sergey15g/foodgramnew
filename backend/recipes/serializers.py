@@ -6,6 +6,7 @@ from users.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
+from rest_framework.serializers import ModelSerializer
 import base64
 
 
@@ -289,7 +290,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
         recipes = obj.recipes.all()
         if limit:
             recipes = recipes[:int(limit)]
-        serializer = RecipeSerializer(recipes, many=True, read_only=True)
+        serializer = RecipeCustSerializer(recipes, many=True, read_only=True)
         return serializer.data
 
     def get_recipes_count(self, obj):
@@ -375,3 +376,16 @@ class CustomUserSerializer(UserSerializer):
             representation.pop('email', None)
             return representation
         return super().to_representation(instance)
+    
+
+class RecipeCustSerializer(ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )
