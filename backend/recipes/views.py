@@ -39,6 +39,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         tag_slugs = self.request.query_params.getlist('tags')
+        if self.request.query_params.get("is_in_shopping_cart") == "1" and self.request.user.is_authenticated:
+            queryset = queryset.filter(in_shopping_cart__user=self.request.user)
         if tag_slugs:
             queryset = queryset.filter(
                 Q(tags__slug__in=tag_slugs)
@@ -116,16 +118,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             self.perform_update(serializer)
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
     
     def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Проверка, является ли текущий пользователь автором рецепта
+        if instance.author != request.user:
+            raise PermissionDenied("You do not have permission to update this recipe.")
+
+        instance.delete()
+
         return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            {"detail": "DELETED"},
+            status=204
         )
 
     def perform_destroy(self, instance):
@@ -143,7 +154,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             shopping_cart, created = ShoppingCart.objects.get_or_create(user=user, recipe=recipe)
             serializer = ShoppingCartSerializer(shopping_cart)
-            return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+            response = {
+                "id": serializer.data["recipe"]["id"],
+                "name": serializer.data["recipe"]["name"],
+                "image": serializer.data["recipe"]["image"],
+                "cooking_time": serializer.data["recipe"]["cooking_time"]
+            }
+            return Response(response, status=status.HTTP_201_CREATED if created else 400)
 
         elif request.method == 'DELETE':
             shopping_cart = ShoppingCart.objects.filter(user=user, recipe=recipe)
@@ -151,7 +168,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 shopping_cart.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
-                return Response({'detail': 'Recipe not in shopping cart'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': 'Recipe not in shopping cart'}, status=400)
     
     @action(detail=False, methods=['get'], url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
@@ -170,7 +187,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(amount=Sum('recipeingredient__amount')).order_by()
 
         if ingredients:
-            elements.append(Paragraph('Список покупок:', styles['Heading1']))
+            elements.append(Paragraph('Список покупок:', styles['Normal']))
             elements.append(Spacer(1, 12))
 
             for index, ingredient in enumerate(ingredients, start=1):
@@ -248,6 +265,8 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
+        if request.user.is_anonymous:
+            return Response(status=401)
         instance = self.get_object()
         _, created = Favorite.objects.get_or_create(user=request.user, recipe=instance)
         if created:
@@ -256,6 +275,8 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
         return Response({"detail": "Recipe is already in favorites."}, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
+        if request.user.is_anonymous:
+            return Response(status=401)
         instance = self.get_object()
         favorite = Favorite.objects.filter(user=request.user, recipe=instance).first()
         if favorite:
