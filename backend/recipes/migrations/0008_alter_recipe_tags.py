@@ -6,14 +6,14 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tags', '0001_initial'),
-        ('recipes', '0007_favorite_favorite_unique_favorite'),
+        ("tags", "0001_initial"),
+        ("recipes", "0007_favorite_favorite_unique_favorite"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='recipe',
-            name='tags',
-            field=models.ManyToManyField(related_name='recipes', to='tags.tag'),
+            model_name="recipe",
+            name="tags",
+            field=models.ManyToManyField(related_name="recipes", to="tags.tag"),
         ),
     ]

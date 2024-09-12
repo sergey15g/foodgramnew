@@ -6,18 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('recipes', '0005_rename_cooking_duration_recipe_cooking_time'),
+        ("recipes", "0005_rename_cooking_duration_recipe_cooking_time"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='recipeingredient',
-            name='measurement_unit',
+            model_name="recipeingredient",
+            name="measurement_unit",
             field=models.CharField(max_length=200, null=True),
         ),
         migrations.AddField(
-            model_name='recipeingredient',
-            name='name',
+            model_name="recipeingredient",
+            name="name",
             field=models.CharField(max_length=256, null=True),
         ),
     ]
