@@ -1,11 +1,12 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from django.contrib.admin import display
 
 from .models import Favorite, Ingredient, Recipe, RecipeIngredient
 
 
 @admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
+class IngredientAdmin(ModelAdmin):
     list_display = (
         "name",
         "measurement_unit",
@@ -17,6 +18,7 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ("name", "id", "author", "added_in_favorites")
     readonly_fields = ("added_in_favorites",)
+    search_fields = ('name', 'author__username', 'author__email')
     list_filter = (
         "author",
         "name",
@@ -29,7 +31,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 
 @admin.register(RecipeIngredient)
-class RecipeIngredientAdmin(admin.ModelAdmin):
+class RecipeIngredientAdmin(ModelAdmin):
     list_display = (
         "recipe",
         "ingredient",
