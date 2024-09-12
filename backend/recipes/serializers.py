@@ -59,7 +59,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(source='recipeingredient_set', many=True)
     # tags = TagSerializer(many=True, read_only=True)
     tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.all())
-    is_favorited = serializers.SerializerMethodField('check_is_in_shopping_cart')
+    is_favorited = serializers.SerializerMethodField('check_is_in_favourited')
     is_in_shopping_cart = serializers.SerializerMethodField('check_is_in_shopping_cart')
     # is_subscribed = serializers.SerializerMethodField()
     image = Base64ImageField(required=False, allow_null=True)
@@ -73,9 +73,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             'text': {'required': True},
             'cooking_time': {'required': True},
         }
-
-    def check_is_in_shopping_cart(self, x):
-        return True
 
     def validate_tags(self, value):
         if not value:
@@ -158,6 +155,20 @@ class RecipeSerializer(serializers.ModelSerializer):
         if obj.image:
             return self.context['request'].build_absolute_uri(obj.image.url)
         return ""
+
+    def check_is_in_shopping_cart(self, obj):
+        if self.context.get("request") is None:
+            return False
+        if self.context.get("request").user.is_authenticated and list(self.context.get("request").user.shopping_cart.all().filter(recipe=obj)) != []:
+            return True
+        return False
+
+    def check_is_in_favourited(self, obj):
+        if self.context.get("request") is None:
+            return False
+        if self.context.get("request").user.is_authenticated and list(self.context.get("request").user.favorites_recipes.all().filter(recipe=obj)) != []:
+            return True
+        return False
 
 
 class RecipeLimitedFieldsSerializer(serializers.ModelSerializer):
@@ -271,7 +282,6 @@ class RecipeUpdateIngredientSerializer(serializers.ModelSerializer):
         for ingredient_data in ingredients:
             ingredient = ingredient_data.pop('ingredient')
             RecipeIngredient.objects.create(recipe=recipe, ingredient=ingredient, **ingredient_data)
-
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
