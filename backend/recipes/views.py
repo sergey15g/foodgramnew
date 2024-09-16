@@ -14,15 +14,20 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-from shopping_cart.models import ShoppingCart
+
 from shopping_cart.serializers import ShoppingCartSerializer
 
-from .filters import RecipeFilter, TagFilter
-from .models import Favorite, Ingredient, Recipe
+from .filters import RecipeFilter
+from .models import Favorite, Ingredient, Recipe, ShoppingCart
 from .pagination import RecipePagination
-from .serializers import (FavoriteRecipeSerializer, IngredientSerializer,
-                          RecipeLimitedFieldsSerializer, RecipeSerializer,
-                          RecipeUpdateIngredientSerializer)
+from .serializers import (
+    FavoriteRecipeSerializer,
+    IngredientSerializer,
+    RecipeLimitedFieldsSerializer,
+    RecipeReadSerializer,
+    RecipeWriteSerializer,
+    RecipeUpdateIngredientSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +36,7 @@ pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by("id")
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeReadSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = RecipePagination
     filter_backends = [DjangoFilterBackend]
@@ -46,7 +51,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             and self.request.user.is_authenticated
         ):
             queryset = queryset.filter(
-                in_shopping_cart__user=self.request.user
+                recipes_in_shopping_cart__user=self.request.user
             )
         if (
             self.request.query_params.get("is_favorited") == "1"
@@ -70,7 +75,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_filterset_class(self):
         if "tags" in self.request.query_params:
-            return TagFilter
+            return RecipeFilter
         return super().get_filterset_class()
 
     def list(self, request, *args, **kwargs):
@@ -114,7 +119,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -203,9 +210,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             if shopping_cart.exists():
                 shopping_cart.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({"detail": "Recipe not in shopping cart"}, status=400)
+        return Response(
+            {"detail": "Recipe not in shopping cart"}, status=400
+        )
 
-    @action(detail=False, methods=["get"], url_path="download_shopping_cart")
+    @action(
+        detail=False, methods=["get"], url_path="download_shopping_cart"
+    )
     def download_shopping_cart(self, request):
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -220,7 +231,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         styles["Normal"].fontName = "Times-Roman"  # Установка шрифта
         elements = []
 
-        shopping_cart_items = request.user.shopping_cart.all()
+        shopping_cart_items = request.user.recipes_shopping_cart.all()
         recipes = [item.recipe for item in shopping_cart_items]
 
         ingredients = (
@@ -309,7 +320,7 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerializer
+    serializer_class = RecipeReadSerializer
 
     def get_serializer_class(self):
         if self.action == "create" or self.action == "destroy":

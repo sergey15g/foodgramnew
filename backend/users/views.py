@@ -7,13 +7,20 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 
 from .models import Subscription
-from .serializers import (SetPasswordSerializer, UserDetailSerializer,
-                          UserRegistrationSerializer, UserSerializer)
+from .serializers import (
+    SetPasswordSerializer,
+    UserDetailSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+)
 from recipes.serializers import SubscribeSerializer
 
 User = get_user_model()
@@ -199,7 +206,7 @@ class UserViewSet(viewsets.ModelViewSet):
     )
     def subscriptions(self, request, *args, **kwargs):
         user = request.user
-        queryset = User.objects.filter(subscribers__user=user)
+        queryset = User.objects.filter(users_subscribers__user=user)
         pages = self.paginate_queryset(queryset)
         serializer = SubscribeSerializer(
             pages, many=True, context={"request": request}

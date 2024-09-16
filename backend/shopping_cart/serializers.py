@@ -1,11 +1,11 @@
 from rest_framework import serializers
 
-from .models import ShoppingCart
-from recipes.serializers import RecipeSerializer
+from recipes.models import ShoppingCart
+from recipes.serializers import RecipeReadSerializer
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    recipe = RecipeSerializer(read_only=True)
+    recipe = RecipeReadSerializer(read_only=True)
 
     class Meta:
         model = ShoppingCart

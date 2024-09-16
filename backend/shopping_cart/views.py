@@ -7,12 +7,17 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 
-from .models import ShoppingCart
-from .serializers import ShoppingCartCreateSerializer, ShoppingCartSerializer
+from recipes.models import ShoppingCart
+from .serializers import (
+    ShoppingCartCreateSerializer,
+    ShoppingCartSerializer,
+)
 from recipes.models import Recipe
 
 FILENAME = "shopping_cart.pdf"
