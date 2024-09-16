@@ -11,6 +11,17 @@ from users.models import Subscription, User
 from users.serializers import UserSerializer
 
 
+class RecipeIngredientManager:
+    @staticmethod
+    def create_recipe_ingredient(recipe, ingredient_data):
+        ingredient = ingredient_data.pop("ingredient")
+        RecipeIngredient.objects.create(
+            recipe=recipe,
+            ingredient=ingredient,
+            **ingredient_data,
+        )
+
+
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
@@ -306,11 +317,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         # Создаем новые ингредиенты
         for ingredient_data in ingredients_data:
-            ingredient = ingredient_data.pop('ingredient')
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient=ingredient,
-                **ingredient_data,
+            RecipeIngredientManager.create_recipe_ingredient(
+                instance, ingredient_data
             )
 
         return instance
@@ -378,7 +386,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         if self.context.get("request").user.is_authenticated:
             return (
                 self.context.get("request")
-                .user.shopping_cart.filter(recipe=obj)
+                .user.recipes_shopping_cart.filter(recipe=obj)
                 .exists()
             )
 
@@ -402,6 +410,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipeingredient_set', [])
         tags_data = validated_data.pop('tags', [])
+        validated_data['author'] = self.context['request'].user
 
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
@@ -588,8 +597,8 @@ class SubscribeSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
-            return request.user.subscriptions.filter(
-                subscribed_to=obj
+            return request.user.recipes_subscriptions.filter(
+                author=obj
             ).exists()
         return False
 
