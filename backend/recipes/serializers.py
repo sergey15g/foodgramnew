@@ -236,6 +236,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         }
 
     def validate_tags(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Tags should be a list.')
+
         if not value:
             raise serializers.ValidationError(
                 'Поле Тег не может быть пустым.'
@@ -270,7 +273,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipeingredient_set')
         tags_data = validated_data.pop(
-            'tags'
+            'tags', []
         )  # Извлекаем теги из validated_data
 
         # # Проверка на пустое поле ingredients
@@ -290,6 +293,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         recipe = Recipe.objects.create(**validated_data)  # Создаем рецепт
         recipe.tags.set(tags_data)  # Добавляем теги к рецепту
+        recipe.save()
 
         recipe_ingredients = [
             RecipeIngredient(

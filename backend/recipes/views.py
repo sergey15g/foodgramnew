@@ -55,7 +55,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ["update", "partial_update"]:
-            return RecipeUpdateIngredientSerializer
+            return RecipeWriteSerializer
         return super().get_serializer_class()
 
     # def list(self, request, *args, **kwargs):
@@ -260,14 +260,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
+    queryset = Ingredient.objects.all().order_by('name')
     serializer_class = IngredientSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    # permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [SearchFilter]
     search_fields = ['name']
 
     def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Кастомная фильтрация по началу названия
+        name_param = request.query_params.get('name')
+        if name_param:
+            queryset = queryset.filter(name__istartswith=name_param)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         return Response(
