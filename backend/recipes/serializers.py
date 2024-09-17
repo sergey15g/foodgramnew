@@ -571,7 +571,7 @@ class RecipeUpdateIngredientSerializer(serializers.ModelSerializer):
 
     def create_ingredients_amounts(self, recipe, ingredients):
         for ingredient in ingredients:
-            Ingredient.objects.create(recipe=recipe, **ingredient)
+            RecipeIngredient.objects.create(recipe=recipe, **ingredient)
 
 
 class SubscribeSerializer(serializers.ModelSerializer):
