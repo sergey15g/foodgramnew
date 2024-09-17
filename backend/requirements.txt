@@ -28,3 +28,6 @@ tzdata==2024.1
 urllib3==2.2.2
 gunicorn
 reportlab
+python_dotenv==1.0.1
+psycopg2_binary==2.9.9
+django_unfold==0.38.0

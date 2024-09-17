@@ -115,7 +115,7 @@ class Recipe(models.Model):
         Ingredient, through='RecipeIngredient', verbose_name='Ингридиенты'
     )
     tags = models.ManyToManyField(
-        Tag, related_name='recipes', verbose_name='Тэги', blank=True
+        Tag, related_name='recipes', verbose_name='Тэги'
     )
 
     class Meta:

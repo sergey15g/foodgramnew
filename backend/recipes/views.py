@@ -1,6 +1,7 @@
 import io
 import logging
 
+from django_filters import rest_framework as filters
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Sum
 from django.http import FileResponse
@@ -12,13 +13,14 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.filters import SearchFilter
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from shopping_cart.serializers import ShoppingCartSerializer
 
-from .filters import RecipeFilter
+from .filters import RecipeFilter, IngredientFilter
 from .models import (
     Favorite,
     Ingredient,
@@ -39,7 +41,7 @@ from http import HTTPStatus
 
 logger = logging.getLogger(__name__)
 
-pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
+# pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -51,11 +53,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        return super().get_queryset()
+        queryset = super().get_queryset()
+        # tags = self.request.query_params.getlist('tags', None)
+
+        # if tags:
+        #     queryset = queryset.filter(tags__name__in=tags)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ["update", "partial_update"]:
-            return RecipeWriteSerializer
+            return RecipeUpdateIngredientSerializer
         return super().get_serializer_class()
 
     # def list(self, request, *args, **kwargs):
@@ -86,25 +94,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #     serializer = self.get_serializer(queryset, many=True)
     #     return Response(serializer.data)
     #
-    # def create(self, request, *args, **kwargs):
-    #     if "image" not in request.data or request.data["image"] == "":
-    #         raise ValidationError({"image": "This field is required."})
-    #     # Обрабатываем POST запрос на создание нового рецепта
-    #     serializer = self.get_serializer(data=request.data)
-    #     if serializer.is_valid():
-    #         self.perform_create(serializer)
-    #         headers = self.get_success_headers(serializer.data)
-    #         return Response(
-    #             serializer.data,
-    #             status=status.HTTP_201_CREATED,
-    #             headers=headers,
-    #         )
-    #     return Response(
-    #         serializer.errors, status=status.HTTP_400_BAD_REQUEST
-    #     )
-    #
-    # def perform_create(self, serializer):
-    #     serializer.save(author=self.request.user)
+    def create(self, request, *args, **kwargs):
+        if "image" not in request.data or request.data["image"] == "":
+            raise ValidationError({"image": "This field is required."})
+        # Обрабатываем POST запрос на создание нового рецепта
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+        return Response(
+            serializer.errors, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
 
     @action(detail=True, methods=["get"], url_path="get-link")
     def get_link(self, request, pk=None):
@@ -113,44 +121,44 @@ class RecipeViewSet(viewsets.ModelViewSet):
         link = f"/api/recipes/{recipe.id}/"
         return Response({"short-link": link}, status=status.HTTP_200_OK)
 
-    # def update(self, request, *args, **kwargs):
-    #     partial = kwargs.pop("partial", True)
-    #     instance = self.get_object()
-    #
-    #     # Проверка, является ли текущий пользователь автором рецепта
-    #     if instance.author != request.user:
-    #         raise PermissionDenied(
-    #             "You do not have permission to update this recipe."
-    #         )
-    #
-    #     serializer = self.get_serializer(
-    #         instance, data=request.data, partial=partial
-    #     )
-    #     if serializer.is_valid():
-    #         self.perform_update(serializer)
-    #         return Response(serializer.data)
-    #
-    #     return Response(status=status.HTTP_400_BAD_REQUEST)
-    #
-    # def partial_update(self, request, *args, **kwargs):
-    #     kwargs["partial"] = True
-    #     return self.update(request, *args, **kwargs)
-    #
-    # def destroy(self, request, *args, **kwargs):
-    #     instance = self.get_object()
-    #
-    #     # Проверка, является ли текущий пользователь автором рецепта
-    #     if instance.author != request.user:
-    #         raise PermissionDenied(
-    #             "You do not have permission to update this recipe."
-    #         )
-    #
-    #     instance.delete()
-    #
-    #     return Response({"detail": "DELETED"}, status=204)
-    #
-    # def perform_destroy(self, instance):
-    #     instance.delete()
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", True)
+        instance = self.get_object()
+
+        # Проверка, является ли текущий пользователь автором рецепта
+        if instance.author != request.user:
+            raise PermissionDenied(
+                "You do not have permission to update this recipe."
+            )
+
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial
+        )
+        if serializer.is_valid():
+            self.perform_update(serializer)
+            return Response(serializer.data)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs["partial"] = True
+        return self.update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Проверка, является ли текущий пользователь автором рецепта
+        if instance.author != request.user:
+            raise PermissionDenied(
+                "You do not have permission to update this recipe."
+            )
+
+        instance.delete()
+
+        return Response({"detail": "DELETED"}, status=204)
+
+    def perform_destroy(self, instance):
+        instance.delete()
 
     def _handle_post_request(self, request, pk, model, serializer_class):
         recipe = get_object_or_404(Recipe, id=pk)
@@ -206,9 +214,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(
         detail=False, methods=["get"], url_path="download_shopping_cart"
     )
-    @action(
-        detail=False, methods=["get"], url_path="download_shopping_cart"
-    )
     def download_shopping_cart(self, request):
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -224,7 +229,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         elements = []
 
         # Получаем все рецепты в корзине пользователя
-        shopping_cart_items = request.user.shopping_cart.all()
+        shopping_cart_items = request.user.recipes_shopping_cart.all()
         recipe_ids = [item.recipe.id for item in shopping_cart_items]
 
         # Получаем все ингредиенты в рецептах, которые находятся в корзине пользователя
@@ -260,22 +265,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all().order_by('name')
+    queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    # permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [SearchFilter]
-    search_fields = ['name']
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.DjangoFilterBackend, SearchFilter]
+    filterset_class = IngredientFilter
+    pagination_class = None
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        # Кастомная фильтрация по началу названия
-        name_param = request.query_params.get('name')
-        if name_param:
-            queryset = queryset.filter(name__istartswith=name_param)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         return Response(

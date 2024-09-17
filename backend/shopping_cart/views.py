@@ -97,7 +97,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         elements = []
 
         shopping_cart = (
-            request.user.shopping_cart.recipe.values(
+            request.user.recipes_shopping_cart.recipe.values(
                 "ingredients__name", "ingredients__measurement_unit"
             )
             .annotate(amount=Sum("recipe__amount"))

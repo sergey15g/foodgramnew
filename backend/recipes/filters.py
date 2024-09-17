@@ -1,14 +1,10 @@
-import django_filters
 from django.db.models import Q
 from django_filters import rest_framework as filters
 
-from .models import Recipe, Tag
+from .models import Recipe, Ingredient
 
 
 class RecipeFilter(filters.FilterSet):
-    tags = filters.AllValuesMultipleFilter(
-        field_name="tags__slug",  # Фильтрация по полю slug в связи ManyToMany
-    )
     is_in_shopping_cart = filters.BooleanFilter(
         method='filter_is_in_shopping_cart'
     )
@@ -26,7 +22,7 @@ class RecipeFilter(filters.FilterSet):
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if value and not user.is_anonymous:
-            return queryset.filter(shopping_cart__user=user)
+            return queryset.filter(recipes_in_shopping_cart__user=user)
         return queryset
 
     def filter_is_favorited(self, queryset, name, value):
@@ -40,3 +36,11 @@ class RecipeFilter(filters.FilterSet):
         if value and not user.is_anonymous:
             return queryset.filter(subscription__user=user)
         return queryset
+
+
+class IngredientFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name="name", lookup_expr='istartswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ['name']
