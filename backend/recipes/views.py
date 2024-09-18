@@ -2,15 +2,13 @@ import io
 import logging
 from http import HTTPStatus
 
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -21,20 +19,22 @@ from rest_framework.response import Response
 from shopping_cart.serializers import ShoppingCartSerializer
 
 from .filters import IngredientFilter, RecipeFilter
-from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart
+from .models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+)
 from .pagination import RecipePagination
 from .serializers import (
     FavoriteRecipeSerializer,
     IngredientSerializer,
-    RecipeLimitedFieldsSerializer,
     RecipeReadSerializer,
     RecipeUpdateIngredientSerializer,
-    RecipeWriteSerializer,
 )
 
 logger = logging.getLogger(__name__)
-
-# pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -47,10 +47,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # tags = self.request.query_params.getlist('tags', None)
-
-        # if tags:
-        #     queryset = queryset.filter(tags__name__in=tags)
 
         return queryset
 
@@ -59,34 +55,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeUpdateIngredientSerializer
         return super().get_serializer_class()
 
-    # def list(self, request, *args, **kwargs):
-    #     logger.info(f"Request query params: {request.query_params}")
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #
-    #     if "tags" in request.query_params:
-    #         filterset_class = self.get_filterset_class()
-    #         if filterset_class:
-    #             filterset = filterset_class(
-    #                 request.query_params, queryset=queryset
-    #             )
-    #             if filterset.is_valid():
-    #                 queryset = filterset.qs
-    #                 logger.info(
-    #                     f"Filtered queryset count: {queryset.count()}"
-    #                 )
-    #             else:
-    #                 return Response(
-    #                     filterset.errors, status=status.HTTP_400_BAD_REQUEST
-    #                 )
-    #
-    #     page = self.paginate_queryset(queryset)
-    #     if page is not None:
-    #         serializer = self.get_serializer(page, many=True)
-    #         return self.get_paginated_response(serializer.data)
-    #
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
-    #
     def create(self, request, *args, **kwargs):
         if "image" not in request.data or request.data["image"] == "":
             raise ValidationError({"image": "This field is required."})
@@ -234,7 +202,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         if ingredients:
-            elements.append(Paragraph("Список покупок:", styles["Normal"]))
+            elements.append(
+                Paragraph("Список покупок:", styles["Normal"])
+            )
             elements.append(Spacer(1, 12))
 
             for index, ingredient in enumerate(ingredients, start=1):
@@ -292,19 +262,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
-    # @action(detail=True, methods=["post"])
-    # def favorite(self, request, pk=None):
-    #     instance = self.get_object()
-    #     request.user.favorite_recipe.recipe.add(instance)
-    #     serializer = self.get_serializer(instance)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #
-    # @favorite.mapping.delete
-    # def unfavorite(self, request, pk=None):
-    #     instance = self.get_object()
-    #     request.user.favorite_recipe.recipe.remove(instance)
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -324,7 +281,9 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
         )
         if created:
             serializer = self.get_serializer(instance)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
         return Response(
             {"detail": "Recipe is already in favorites."},
             status=status.HTTP_400_BAD_REQUEST,

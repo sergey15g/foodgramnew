@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django_filters import rest_framework as filters
 from tags.models import Tag
 
@@ -14,7 +13,7 @@ class RecipeFilter(filters.FilterSet):
         field_name='tags__slug',
         to_field_name='slug',
         queryset=Tag.objects.all(),
-        conjoined=False
+        conjoined=False,
     )
 
     class Meta:

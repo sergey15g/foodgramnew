@@ -8,10 +8,16 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 
-from .serializers import ShoppingCartCreateSerializer, ShoppingCartSerializer
+from .serializers import (
+    ShoppingCartCreateSerializer,
+    ShoppingCartSerializer,
+)
 
 FILENAME = "shopping_cart.pdf"
 

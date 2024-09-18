@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -156,7 +155,10 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингридиенты рецептов'
 
     def __str__(self):
-        return f'{self.ingredient.name} - {self.amount} {self.ingredient.measurement_unit}'
+        return (
+            f'{self.ingredient.name} - '
+            f'{self.amount} {self.ingredient.measurement_unit}'
+        )
 
 
 class Subscription(models.Model):

@@ -8,7 +8,11 @@ from recipes.serializers import SubscribeSerializer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 
 from .models import Subscription
@@ -76,7 +80,9 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         if not user.is_authenticated:
             return Response(
-                {"detail": "Authentication credentials were not provided."},
+                {
+                    "detail": "Authentication credentials were not provided."
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         serializer = UserDetailSerializer(
@@ -130,7 +136,10 @@ class UserViewSet(viewsets.ModelViewSet):
                     )
                 except Exception as e:
                     return Response(
-                        {"detail": "Invalid base64 data.", "error": str(e)},
+                        {
+                            "detail": "Invalid base64 data.",
+                            "error": str(e),
+                        },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
             return Response(
@@ -180,7 +189,9 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(
                 author, context={"request": request}
             )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
 
         if request.method == "DELETE":
             subscription = Subscription.objects.filter(
