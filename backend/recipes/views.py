@@ -193,7 +193,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_cart_items = request.user.recipes_shopping_cart.all()
         recipe_ids = [item.recipe.id for item in shopping_cart_items]
 
-        # Получаем все ингредиенты в рецептах, которые находятся в корзине пользователя
+        # Получаем все ингредиенты в корзине пользователя
         ingredients = (
             RecipeIngredient.objects.filter(recipe__id__in=recipe_ids)
             .values("ingredient__name", "ingredient__measurement_unit")
