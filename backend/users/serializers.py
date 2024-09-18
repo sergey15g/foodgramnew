@@ -121,7 +121,6 @@ class SetPasswordSerializer(serializers.Serializer):
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Subscription
         fields = ("id", "user", "subscribed_to")

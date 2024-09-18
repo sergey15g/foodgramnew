@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("tags", "0002_alter_tag_name_alter_tag_slug"),
@@ -48,12 +47,16 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="recipe",
             name="is_favorited",
-            field=models.BooleanField(default=False, verbose_name="В избранном"),
+            field=models.BooleanField(
+                default=False, verbose_name="В избранном"
+            ),
         ),
         migrations.AlterField(
             model_name="recipe",
             name="is_in_shopping_cart",
-            field=models.BooleanField(default=False, verbose_name="В корзине"),
+            field=models.BooleanField(
+                default=False, verbose_name="В корзине"
+            ),
         ),
         migrations.AlterField(
             model_name="recipe",
@@ -96,7 +99,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="recipeingredient",
             name="name",
-            field=models.CharField(max_length=256, null=True, verbose_name="Название"),
+            field=models.CharField(
+                max_length=256, null=True, verbose_name="Название"
+            ),
         ),
         migrations.AlterField(
             model_name="recipeingredient",

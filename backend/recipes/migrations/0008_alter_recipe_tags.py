@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("tags", "0001_initial"),
         ("recipes", "0007_favorite_favorite_unique_favorite"),
@@ -14,6 +13,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="recipe",
             name="tags",
-            field=models.ManyToManyField(related_name="recipes", to="tags.tag"),
+            field=models.ManyToManyField(
+                related_name="recipes", to="tags.tag"
+            ),
         ),
     ]

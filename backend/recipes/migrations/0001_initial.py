@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = []
@@ -70,7 +69,8 @@ class Migration(migrations.Migration):
                 (
                     "recipe",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="recipes.recipe"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="recipes.recipe",
                     ),
                 ),
             ],

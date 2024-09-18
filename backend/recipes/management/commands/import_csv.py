@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+
 from recipes.models import Ingredient
 
 CSV_FILES_MAP = {
@@ -26,7 +27,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         csv_directory = (
-            options["directory"] if options["directory"] else settings.CSV_DIR
+            options["directory"]
+            if options["directory"]
+            else settings.CSV_DIR
         )
 
         for model, csv_filename in CSV_FILES_MAP.items():

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("tags", "0003_alter_tag_options"),
         ("recipes", "0012_alter_recipeingredient_amount"),
@@ -15,7 +14,10 @@ class Migration(migrations.Migration):
             model_name="recipe",
             name="tags",
             field=models.ManyToManyField(
-                blank=True, related_name="recipes", to="tags.tag", verbose_name="Тэги"
+                blank=True,
+                related_name="recipes",
+                to="tags.tag",
+                verbose_name="Тэги",
             ),
         ),
     ]

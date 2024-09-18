@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("recipes", "0008_alter_recipe_tags"),
@@ -26,7 +25,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="ingredient",
             name="measurement_unit",
-            field=models.CharField(max_length=200, verbose_name="Ед. измерения"),
+            field=models.CharField(
+                max_length=200, verbose_name="Ед. измерения"
+            ),
         ),
         migrations.AlterField(
             model_name="ingredient",

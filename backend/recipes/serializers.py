@@ -2,20 +2,13 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer
+
 from tags.serializers import Tag, TagSerializer
 from users.models import Subscription, User
 from users.serializers import UserSerializer
 
 from .fields import Base64ImageField
 from .models import Favorite, Ingredient, Recipe, RecipeIngredient
-
-
-class RecipeCustSerializer(ModelSerializer):
-    image = Base64ImageField()
-
-    class Meta:
-        model = Recipe
-        fields = ("id", "name", "image", "cooking_time")
 
 
 class RecipeIngredientManager:
@@ -88,6 +81,13 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Теги дублируются.")
         return value
 
+    # def validate_cooking_time(self, value):
+    #     if value < 1:
+    #         raise serializers.ValidationError(
+    #             'Время готовки должно быть не менее 1 минуты.'
+    #         )
+    #     return value
+
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError(
@@ -105,7 +105,24 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop("recipeingredient_set")
-        tags_data = validated_data.pop("tags")
+        tags_data = validated_data.pop(
+            "tags"
+        )  # Извлекаем теги из validated_data
+
+        # # Проверка на пустое поле ingredients
+        # if not ingredients_data:
+        #     raise serializers.ValidationError(
+        #         {'ingredients': 'Поле обязательно.'}
+        #     )
+        #
+        # # Проверка на повторяющиеся ингредиенты
+        # ingredient_ids = [
+        #     ingredient['ingredient'].id for ingredient in ingredients_data
+        # ]
+        # if len(ingredient_ids) != len(set(ingredient_ids)):
+        #     raise serializers.ValidationError(
+        #         {'ingredients': 'Дублирование не применимо.'}
+        #     )
 
         recipe = Recipe.objects.create(**validated_data)  # Создаем рецепт
         recipe.tags.set(tags_data)  # Добавляем теги к рецепту
@@ -126,9 +143,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         ingredients_data = validated_data.pop("ingredients", None)
         if ingredients_data is None or not ingredients_data:
             raise ValidationError(
-                {
-                    "ingredients": "Поле обязательно и не может быть пустым."
-                }
+                {"ingredients": "Поле обязательно и не может быть пустым."}
             )
 
         instance = super().update(instance, validated_data)
@@ -196,9 +211,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_image(self, obj):
         if obj.image:
-            return self.context["request"].build_absolute_uri(
-                obj.image.url
-            )
+            return self.context["request"].build_absolute_uri(obj.image.url)
         return ""
 
     def check_is_in_shopping_cart(self, obj):
@@ -251,7 +264,9 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         for ingridient in ingredients_data:
             if ingridient["amount"] < 1:
                 raise serializers.ValidationError(
-                    {"ingredients": "Кол-во ингридиентов не меньше 1"}
+                    {
+                        "ingredients": "Кол-во ингридиентов не меньше 1"
+                    }
                 )
 
         if tags_data == []:
@@ -436,7 +451,9 @@ class RecipeUpdateIngredientSerializer(serializers.ModelSerializer):
         for ingridient in ingredients:
             if ingridient["amount"] < 1:
                 raise serializers.ValidationError(
-                    {"ingredients": "Кол-во ингридиентов не меньше 1"}
+                    {
+                        "ingredients": "Кол-во ингридиентов не меньше 1"
+                    }
                 )
 
         try:
@@ -535,23 +552,22 @@ class SubscribeSerializer(serializers.ModelSerializer):
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = "id"
+        fields = ["id"]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         recipe = Favorite.objects.get(pk=representation["id"]).recipe
-        return {
+        representation = {
             "id": recipe.id,
             "name": recipe.name,
             "image": recipe.image.url,
             "cooking_time": recipe.cooking_time,
         }
+        return representation
 
     def get_image(self, obj):
         if obj.image:
-            return self.context["request"].build_absolute_uri(
-                obj.image.url
-            )
+            return self.context["request"].build_absolute_uri(obj.image.url)
         return None
 
 
@@ -574,9 +590,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "first_name": user.first_name,
             "last_name": user.last_name,
             "avatar": (
-                self.context["request"].build_absolute_uri(
-                    user.avatar.url
-                )
+                self.context["request"].build_absolute_uri(user.avatar.url)
                 if user.avatar
                 else None
             ),
@@ -584,7 +598,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         recipes = Recipe.objects.filter(author=obj.recipe.author)
-        return RecipeCustSerializer(recipes, many=True).data
+        return RecipeSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.recipe.author).count()
@@ -622,3 +636,11 @@ class CustomUserSerializer(UserSerializer):
             representation.pop("email", None)
             return representation
         return super().to_representation(instance)
+
+
+class RecipeCustSerializer(ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = ("id", "name", "image", "cooking_time")

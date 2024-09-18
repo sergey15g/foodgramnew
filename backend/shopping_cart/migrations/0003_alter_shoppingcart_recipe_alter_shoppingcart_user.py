@@ -6,10 +6,12 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("recipes", "0010_alter_recipe_author_alter_recipe_cooking_time_and_more"),
+        (
+            "recipes",
+            "0010_alter_recipe_author_alter_recipe_cooking_time_and_more",
+        ),
         ("shopping_cart", "0002_initial"),
     ]
 

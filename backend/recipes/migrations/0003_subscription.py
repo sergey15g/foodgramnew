@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("recipes", "0002_initial"),
@@ -28,7 +27,8 @@ class Migration(migrations.Migration):
                 (
                     "recipe",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="recipes.recipe"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="recipes.recipe",
                     ),
                 ),
                 (

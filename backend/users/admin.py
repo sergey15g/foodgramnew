@@ -53,7 +53,7 @@ class UserAdmin(UserAdmin):
     )
     search_fields = ("email", "username", "first_name", "last_name")
     ordering = ("id",)
-    actions = ['delete_selected']
+    actions = ["delete_selected"]
 
 
 @admin.register(Subscription)

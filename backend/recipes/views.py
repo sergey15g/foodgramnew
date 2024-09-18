@@ -16,6 +16,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+
 from shopping_cart.serializers import ShoppingCartSerializer
 
 from .filters import IngredientFilter, RecipeFilter
@@ -193,7 +194,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_cart_items = request.user.recipes_shopping_cart.all()
         recipe_ids = [item.recipe.id for item in shopping_cart_items]
 
-        # Получаем все ингредиенты в корзине пользователя
+        # Получаем все ингредиенты в рецептах в корзине пользователя
         ingredients = (
             RecipeIngredient.objects.filter(recipe__id__in=recipe_ids)
             .values("ingredient__name", "ingredient__measurement_unit")
@@ -202,9 +203,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         if ingredients:
-            elements.append(
-                Paragraph("Список покупок:", styles["Normal"])
-            )
+            elements.append(Paragraph("Список покупок:", styles["Normal"]))
             elements.append(Spacer(1, 12))
 
             for index, ingredient in enumerate(ingredients, start=1):
@@ -262,6 +261,19 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
+    # @action(detail=True, methods=["post"])
+    # def favorite(self, request, pk=None):
+    #     instance = self.get_object()
+    #     request.user.favorite_recipe.recipe.add(instance)
+    #     serializer = self.get_serializer(instance)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #
+    # @favorite.mapping.delete
+    # def unfavorite(self, request, pk=None):
+    #     instance = self.get_object()
+    #     request.user.favorite_recipe.recipe.remove(instance)
+    #     return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
@@ -281,9 +293,7 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
         )
         if created:
             serializer = self.get_serializer(instance)
-            return Response(
-                serializer.data, status=status.HTTP_201_CREATED
-            )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "Recipe is already in favorites."},
             status=status.HTTP_400_BAD_REQUEST,

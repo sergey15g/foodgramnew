@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("tags", "0003_alter_tag_options"),
         ("recipes", "0013_alter_recipe_tags"),

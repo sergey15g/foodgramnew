@@ -4,9 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("shopping_cart", "0003_alter_shoppingcart_recipe_alter_shoppingcart_user"),
+        (
+            "shopping_cart",
+            "0003_alter_shoppingcart_recipe_alter_shoppingcart_user",
+        ),
     ]
 
     operations = [

@@ -7,10 +7,12 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("recipes", "0010_alter_recipe_author_alter_recipe_cooking_time_and_more"),
+        (
+            "recipes",
+            "0010_alter_recipe_author_alter_recipe_cooking_time_and_more",
+        ),
     ]
 
     operations = [
@@ -34,7 +36,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="favorite",
-            options={"verbose_name": "Избранное", "verbose_name_plural": "Избранные"},
+            options={
+                "verbose_name": "Избранное",
+                "verbose_name_plural": "Избранные",
+            },
         ),
         migrations.AlterModelOptions(
             name="ingredient",
@@ -45,7 +50,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="recipe",
-            options={"verbose_name": "Рецепт", "verbose_name_plural": "Рецепты"},
+            options={
+                "verbose_name": "Рецепт",
+                "verbose_name_plural": "Рецепты",
+            },
         ),
         migrations.AlterModelOptions(
             name="recipeingredient",
@@ -56,7 +64,10 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name="subscription",
-            options={"verbose_name": "Подписка", "verbose_name_plural": "Подписки"},
+            options={
+                "verbose_name": "Подписка",
+                "verbose_name_plural": "Подписки",
+            },
         ),
         migrations.AlterUniqueTogether(
             name="subscription",
@@ -116,7 +127,8 @@ class Migration(migrations.Migration):
             field=models.PositiveSmallIntegerField(
                 validators=[
                     django.core.validators.MinValueValidator(
-                        1, message="Время приготовления не может быть меньше 1 минуты"
+                        1,
+                        message="Время приготовления не может быть меньше 1 минуты",
                     ),
                     django.core.validators.MaxValueValidator(
                         10000,
@@ -139,7 +151,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="subscription",
             constraint=models.UniqueConstraint(
-                fields=("user", "author"), name="unique_subscription_recipes"
+                fields=("user", "author"),
+                name="unique_subscription_recipes",
             ),
         ),
         migrations.AddField(

@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("tags", "0002_alter_tag_name_alter_tag_slug"),
     ]

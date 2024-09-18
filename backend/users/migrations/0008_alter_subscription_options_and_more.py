@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("users", "0007_alter_subscription_subscribed_to_and_more"),
     ]
@@ -14,7 +13,10 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(
             name="subscription",
-            options={"verbose_name": "Подписка", "verbose_name_plural": "Подписки"},
+            options={
+                "verbose_name": "Подписка",
+                "verbose_name_plural": "Подписки",
+            },
         ),
         migrations.AlterUniqueTogether(
             name="subscription",
@@ -53,7 +55,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="subscription",
             constraint=models.UniqueConstraint(
-                fields=("user", "subscribed_to"), name="unique_subscription_users"
+                fields=("user", "subscribed_to"),
+                name="unique_subscription_users",
             ),
         ),
     ]
