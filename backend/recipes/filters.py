@@ -1,8 +1,8 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
-
-from .models import Recipe, Ingredient
 from tags.models import Tag
+
+from .models import Ingredient, Recipe
 
 
 class RecipeFilter(filters.FilterSet):
@@ -14,7 +14,7 @@ class RecipeFilter(filters.FilterSet):
         field_name='tags__slug',
         to_field_name='slug',
         queryset=Tag.objects.all(),
-        conjoined=False,
+        conjoined=False
     )
 
     class Meta:
@@ -22,8 +22,8 @@ class RecipeFilter(filters.FilterSet):
         fields = [
             'tags',
             'author',
-            'is_in_shopping_cart',
-            'is_favorited',
+            "is_in_shopping_cart",
+            "is_favorited",
         ]
 
     def filter_is_in_shopping_cart(self, queryset, name, value):

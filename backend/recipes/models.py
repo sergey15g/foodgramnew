@@ -1,17 +1,18 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
+from tags.models import Tag
+
 from .constants import (
     INGREDIENT_NAME_MAX,
-    MEASUREMENT_UNIT_MAX,
-    RECIPES_MAX_NAME,
-    MIN_COOKING_TIME,
-    MAX_COOKING_TIME,
-    MIN_AMOUNT,
     MAX_AMOUNT,
+    MAX_COOKING_TIME,
+    MEASUREMENT_UNIT_MAX,
+    MIN_AMOUNT,
+    MIN_COOKING_TIME,
+    RECIPES_MAX_NAME,
 )
-from tags.models import Tag
 
 User = get_user_model()
 
@@ -103,11 +104,11 @@ class Recipe(models.Model):
         validators=[
             MinValueValidator(
                 MIN_COOKING_TIME,
-                message='Время приготовления не может быть меньше 1 минуты',
+                message="Время приготовления не может быть меньше 1 минуты",
             ),
             MaxValueValidator(
                 MAX_COOKING_TIME,
-                message='Время приготовления не может превышать 10000 минут',
+                message="Время приготовления не может превышать 10000 минут",
             ),
         ],
     )
@@ -141,11 +142,11 @@ class RecipeIngredient(models.Model):
         validators=[
             MinValueValidator(
                 MIN_AMOUNT,
-                message='Количество не может быть меньше 1',
+                message="Количество не может быть меньше 1",
             ),
             MaxValueValidator(
                 MAX_AMOUNT,
-                message='Количество не может превышать 10000',
+                message="Количество не может превышать 10000",
             ),
         ],
     )

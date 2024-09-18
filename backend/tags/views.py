@@ -11,25 +11,25 @@ class TagViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         return Response(
-            {'detail': 'Method not allowed.'},
+            {"detail": "Method not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def partial_update(self, request, *args, **kwargs):
         return Response(
-            {'detail': 'Method not allowed.'},
+            {"detail": "Method not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def destroy(self, request, *args, **kwargs):
         return Response(
-            {'detail': 'Method not allowed.'},
+            {"detail": "Method not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     def create(self, request, *args, **kwargs):
         return Response(
-            {'detail': 'Method not allowed.'},
+            {"detail": "Method not allowed."},
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 

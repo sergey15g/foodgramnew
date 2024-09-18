@@ -1,9 +1,9 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
 from django.contrib.admin import display
+from tags.models import Tag
+from unfold.admin import ModelAdmin
 
 from .models import Favorite, Ingredient, Recipe, RecipeIngredient
-from tags.models import Tag
 
 
 @admin.register(Tag)
