@@ -5,16 +5,16 @@ from .views import ShoppingCartViewSet
 
 router = DefaultRouter()
 router.register(
-    r"shopping_cart", ShoppingCartViewSet, basename="shopping_cart"
+    r'shopping_cart', ShoppingCartViewSet, basename='shopping_cart'
 )
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path('', include(router.urls)),
     path(
-        "recipes/<int:pk>/shopping_cart/",
+        'recipes/<int:pk>/shopping_cart/',
         ShoppingCartViewSet.as_view(
-            {"post": "shopping_cart", "delete": "shopping_cart"}
+            {'post': 'shopping_cart', 'delete': 'shopping_cart'}
         ),
-        name="recipe-shopping-cart",
+        name='recipe-shopping-cart',
     ),
 ]

@@ -9,16 +9,16 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShoppingCart
-        fields = ["id", "user", "recipe"]
+        fields = ('id', 'user', 'recipe')
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        recipe = representation["recipe"]
+        recipe = representation['recipe']
         representation = {
-            "id": recipe["id"],
-            "name": recipe["name"],
-            "image": recipe["image"],
-            "cooking_time": recipe["cooking_time"],
+            'id': recipe['id'],
+            'name': recipe['name'],
+            'image': recipe['image'],
+            'cooking_time': recipe['cooking_time'],
         }
         return representation
 
@@ -26,6 +26,4 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 class ShoppingCartCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
-        fields = ["recipe"]
-    
-
+        fields = 'recipe'

@@ -3,19 +3,19 @@ from django.db import models
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True, verbose_name="Мыло")
-    first_name = models.CharField(max_length=150, verbose_name="Имя")
-    last_name = models.CharField(max_length=150, verbose_name="Фамилия")
+    email = models.EmailField(unique=True, verbose_name='Мыло')
+    first_name = models.CharField(max_length=150, verbose_name='Имя')
+    last_name = models.CharField(max_length=150, verbose_name='Фамилия')
     avatar = models.ImageField(
-        upload_to="avatars/",
-        default="avatars/default_avatar.png",
+        upload_to='avatars/',
+        default='avatars/default_avatar.png',
         null=True,
         blank=True,
-        verbose_name="Аватар",
+        verbose_name='Аватар',
     )
 
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
 
 class Subscription(models.Model):
@@ -35,7 +35,7 @@ class Subscription(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'subscribed_to'],
+                fields=('user', 'subscribed_to'),
                 name='unique_subscription_users',
             )
         ]

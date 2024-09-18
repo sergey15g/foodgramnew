@@ -20,7 +20,7 @@ from .serializers import (
 )
 from recipes.models import Recipe
 
-FILENAME = "shopping_cart.pdf"
+FILENAME = 'shopping_cart.pdf'
 
 
 class ShoppingCartViewSet(viewsets.ModelViewSet):
@@ -28,7 +28,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action in ['list', 'retrieve']:
             return ShoppingCartSerializer
         return ShoppingCartCreateSerializer
 
@@ -40,21 +40,21 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=["get", "post", "delete"],
-        url_path="shopping_cart",
+        methods=['get', 'post', 'delete'],
+        url_path='shopping_cart',
     )
     def shopping_cart(self, request, pk=None):
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
             return Response(
-                {"detail": "Recipe not found"},
+                {'detail': 'Recipe not found'},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
         user = request.user
 
-        if request.method == "POST":
+        if request.method == 'POST':
             shopping_cart, created = ShoppingCart.objects.get_or_create(
                 user=user, recipe=recipe
             )
@@ -68,7 +68,7 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                 ),
             )
 
-        if request.method == "DELETE":
+        if request.method == 'DELETE':
             shopping_cart = ShoppingCart.objects.filter(
                 user=user, recipe=recipe
             )
@@ -76,12 +76,12 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
                 shopping_cart.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(
-            {"detail": "Recipe not in shopping cart"},
+            {'detail': 'Recipe not in shopping cart'},
             status=status.HTTP_404_NOT_FOUND,
         )
 
     @action(
-        detail=False, methods=["get"], url_path="download_shopping_cart"
+        detail=False, methods=['get'], url_path='download_shopping_cart'
     )
     def download_shopping_cart(self, request):
         buffer = io.BytesIO()
@@ -98,29 +98,29 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
 
         shopping_cart = (
             request.user.recipes_shopping_cart.recipe.values(
-                "ingredients__name", "ingredients__measurement_unit"
+                'ingredients__name', 'ingredients__measurement_unit'
             )
-            .annotate(amount=Sum("recipe__amount"))
+            .annotate(amount=Sum('recipe__amount'))
             .order_by()
         )
 
         if shopping_cart:
             elements.append(
-                Paragraph("Список покупок:", styles["Heading1"])
+                Paragraph('Список покупок:', styles['Heading1'])
             )
             elements.append(Spacer(1, 12))
 
             for index, recipe in enumerate(shopping_cart, start=1):
                 text = (
-                    f'{index}. {recipe["ingredients__name"]} - '
-                    f'{recipe["amount"]} '
-                    f'{recipe["ingredients__measurement_unit"]}.'
+                    f'{index}. {recipe['ingredients__name']} - '
+                    f'{recipe['amount']} '
+                    f'{recipe['ingredients__measurement_unit']}.'
                 )
-                elements.append(Paragraph(text, styles["Normal"]))
+                elements.append(Paragraph(text, styles['Normal']))
                 elements.append(Spacer(1, 12))
         else:
             elements.append(
-                Paragraph("Список покупок пуст!", styles["Heading1"])
+                Paragraph('Список покупок пуст!', styles['Heading1'])
             )
 
         doc.build(elements)

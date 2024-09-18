@@ -2,6 +2,7 @@ from django.db.models import Q
 from django_filters import rest_framework as filters
 
 from .models import Recipe, Ingredient
+from tags.models import Tag
 
 
 class RecipeFilter(filters.FilterSet):
@@ -9,14 +10,20 @@ class RecipeFilter(filters.FilterSet):
         method='filter_is_in_shopping_cart'
     )
     is_favorited = filters.BooleanFilter(method='filter_is_favorited')
+    tags = filters.ModelMultipleChoiceFilter(
+        field_name='tags__slug',
+        to_field_name='slug',
+        queryset=Tag.objects.all(),
+        conjoined=False,
+    )
 
     class Meta:
         model = Recipe
         fields = [
             'tags',
             'author',
-            "is_in_shopping_cart",
-            "is_favorited",
+            'is_in_shopping_cart',
+            'is_favorited',
         ]
 
     def filter_is_in_shopping_cart(self, queryset, name, value):

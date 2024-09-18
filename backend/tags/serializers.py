@@ -7,11 +7,11 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ["id", "name", "slug"]
+        fields = ('id', 'name', 'slug')
         many = True
 
 
 class TagViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ["id", "name", "slug"]
+        fields = ('id', 'name', 'slug')
