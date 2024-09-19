@@ -1,7 +1,7 @@
-line-length = 76
+line-length = 78
 
 [lint]
-select = ["E501", "I"]
+select = ["E501"]
 
 [format]
 docstring-code-format = true

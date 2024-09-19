@@ -598,7 +598,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         recipes = Recipe.objects.filter(author=obj.recipe.author)
-        return RecipeSerializer(recipes, many=True).data
+        return RecipeCustSerializer(recipes, many=True).data
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.recipe.author).count()
