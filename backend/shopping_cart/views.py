@@ -2,6 +2,7 @@ import io
 
 from django.db.models import Sum
 from django.http import FileResponse
+from recipes.models import Recipe, ShoppingCart
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
@@ -13,8 +14,6 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
-
-from recipes.models import Recipe, ShoppingCart
 
 from .serializers import (
     ShoppingCartCreateSerializer,

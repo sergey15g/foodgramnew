@@ -2,6 +2,7 @@
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
+from recipes.serializers import SubscribeSerializer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
@@ -11,8 +12,6 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
-
-from recipes.serializers import SubscribeSerializer
 
 from .models import Subscription
 from .pagination import UserPagination
@@ -26,7 +25,6 @@ from .serializers import (
 )
 
 User = get_user_model()
-
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -64,11 +62,12 @@ class UserViewSet(viewsets.ModelViewSet):
             data = {"error": "Unsupported version"}
         return Response(data)
 
-
     def get_permissions(self):
         if self.action in ["create", "get"]:
             self.permission_classes = [AllowAny]
-        elif self.action in ["set_password", "avatar", "subscribe", "subscriptions", "me"]:
+        elif self.action in (
+                ["set_password", "avatar", "subscribe", "subscriptions", "me"]
+        ):
             self.permission_classes = [IsOwnerOrReadOnly]
         elif self.action == "retrieve":
             self.permission_classes = [IsAuthenticatedOrReadOnly]
@@ -86,7 +85,9 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.errors, status=status.HTTP_400_BAD_REQUEST
         )
 
-    @action(detail=False, methods=["get"], url_path="me", permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=["get"], url_path="me",
+            permission_classes=[IsAuthenticated]
+            )
     def me(self, request, *args, **kwargs):
         user = request.user
         serializer = UserDetailSerializer(user, context={"request": request})

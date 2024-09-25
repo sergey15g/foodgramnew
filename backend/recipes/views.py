@@ -16,7 +16,6 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
-
 from shopping_cart.serializers import ShoppingCartSerializer
 
 from .filters import IngredientFilter, RecipeFilter
@@ -28,15 +27,15 @@ from .models import (
     ShoppingCart,
     ShortLink,
 )
-from .utils import generate_short_code
 from .pagination import RecipePagination
+from .permissions import IsAuthenticatedUser, IsAuthorOrReadOnly
 from .serializers import (
     FavoriteRecipeSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
 )
-from .permissions import IsAuthenticatedUser, IsAuthorOrReadOnly
+from .utils import generate_short_code
 
 logger = logging.getLogger(__name__)
 

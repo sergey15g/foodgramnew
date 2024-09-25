@@ -1,4 +1,5 @@
 from django.db import models
+
 from .constants import MAX_LENGHT_NAME
 
 

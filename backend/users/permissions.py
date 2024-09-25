@@ -1,4 +1,8 @@
-from rest_framework.permissions import IsAuthenticated, BasePermission, SAFE_METHODS
+from rest_framework.permissions import (
+    IsAuthenticated,
+    BasePermission,
+    SAFE_METHODS
+)
 
 class IsOwnerOrReadOnly(IsAuthenticated):
     """
