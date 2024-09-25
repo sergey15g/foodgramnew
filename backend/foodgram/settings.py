@@ -51,8 +51,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get(
-    'ALLOWED_HOSTS', default='localhost').split(', ')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 
 # Application definition
@@ -84,9 +83,13 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework.authentication.TokenAuthentication",
     ),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+    "DEFAULT_PERMISSION_CLASSES": (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.AcceptHeaderVersioning",
+    "DEFAULT_VERSION": '1.0',
+    "ALLOWED_VERSIONS": ['1.0', '2.0'],
+    "VERSION_PARAM": 'version'
 }
 
 DJOSER = {

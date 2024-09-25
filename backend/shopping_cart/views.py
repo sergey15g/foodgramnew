@@ -12,6 +12,7 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
+from rest_framework.versioning import AcceptHeaderVersioning
 
 from recipes.models import Recipe, ShoppingCart
 
@@ -26,11 +27,24 @@ FILENAME = "shopping_cart.pdf"
 class ShoppingCartViewSet(viewsets.ModelViewSet):
     queryset = ShoppingCart.objects.all()
     permission_classes = [IsAuthenticated]
+    versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
             return ShoppingCartSerializer
         return ShoppingCartCreateSerializer
+
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

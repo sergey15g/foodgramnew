@@ -1,39 +1,25 @@
 from rest_framework import status, viewsets
-from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+from rest_framework.versioning import AcceptHeaderVersioning
 
 from .models import Tag
 from .serializers import TagViewSerializer
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all().order_by("id")
     serializer_class = TagViewSerializer
+    permission_classes = [AllowAny]
+    versioning_class = AcceptHeaderVersioning
 
-    def update(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)

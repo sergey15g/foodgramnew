@@ -1,23 +1,24 @@
-import base64
 
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
+from rest_framework.versioning import AcceptHeaderVersioning
 
 from recipes.serializers import SubscribeSerializer
 
 from .models import Subscription
+from .pagination import UserPagination
+from .permissions import IsAuthenticatedUser, IsOwnerOrReadOnly
 from .serializers import (
+    AvatarSerializer,
     SetPasswordSerializer,
     UserDetailSerializer,
     UserRegistrationSerializer,
@@ -27,15 +28,14 @@ from .serializers import (
 User = get_user_model()
 
 
-class UserPagination(PageNumberPagination):
-    page_size = 6
-    page_size_query_param = "limit"
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = UserPagination
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
+    permission_classes = [IsAuthenticatedUser]
+    versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -52,14 +52,29 @@ class UserViewSet(viewsets.ModelViewSet):
             return SubscribeSerializer
         return UserSerializer
 
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)
+
+
     def get_permissions(self):
-        if self.action == "create":
+        if self.action in ["create", "get"]:
             self.permission_classes = [AllowAny]
+        elif self.action in ["set_password", "avatar", "subscribe", "subscriptions", "me"]:
+            self.permission_classes = [IsOwnerOrReadOnly]
+        elif self.action == "retrieve":
+            self.permission_classes = [IsAuthenticatedOrReadOnly]
         else:
             self.permission_classes = [IsAuthenticatedOrReadOnly]
-        if self.action in ["set_password", "avatar"]:
-            self.permission_classes = [IsAuthenticated]
-        return super(UserViewSet, self).get_permissions()
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -71,22 +86,10 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.errors, status=status.HTTP_400_BAD_REQUEST
         )
 
-    @action(
-        detail=False,
-        methods=["get"],
-        permission_classes=[IsAuthenticatedOrReadOnly],
-        url_path="me",
-    )
+    @action(detail=False, methods=["get"], url_path="me", permission_classes=[IsAuthenticated])
     def me(self, request, *args, **kwargs):
         user = request.user
-        if not user.is_authenticated:
-            return Response(
-                {"detail": "Authentication credentials were not provided."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        serializer = UserDetailSerializer(
-            user, context={"request": request}
-        )
+        serializer = UserDetailSerializer(user, context={"request": request})
         return Response(serializer.data)
 
     @action(
@@ -115,41 +118,26 @@ class UserViewSet(viewsets.ModelViewSet):
     def avatar(self, request, *args, **kwargs):
         user = request.user
 
-        if request.method == "PUT" or request.method == "PATCH":
-            # Check if avatar is provided in base64 format
-            avatar_base64 = request.data.get("avatar")
-            if avatar_base64:
-                try:
-                    # Decode base64 string
-                    format, imgstr = avatar_base64.split(";base64,")
-                    ext = format.split("/")[-1]
-                    data = base64.b64decode(imgstr)
-                    # Create a file-like object for Django
-                    file_name = f"{user.id}_avatar.{ext}"
-                    file = ContentFile(data, file_name)
-                    user.avatar = file
-                    user.save()
-                    return Response(
-                        {"avatar": user.avatar.url},
-                        status=status.HTTP_200_OK,
-                    )
-                except Exception as e:
-                    return Response(
-                        {"detail": "Invalid base64 data.", "error": str(e)},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+        if request.method in ["PUT", "PATCH"]:
+            serializer = AvatarSerializer(data=request.data)
+            if serializer.is_valid():
+                avatar = serializer.validated_data["avatar"]
+                user.avatar = avatar
+                user.save()
+                return Response(
+                    {"avatar": user.avatar.url}, status=status.HTTP_200_OK
+                )
             return Response(
-                {"detail": "No avatar provided."},
-                status=status.HTTP_400_BAD_REQUEST,
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
             )
 
         if request.method == "DELETE":
             if user.avatar:
                 if default_storage.exists(user.avatar.name):
                     default_storage.delete(user.avatar.name)
-                user.avatar = ""  # Set to empty string instead of None
+                user.avatar = ""
                 user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         detail=True,
@@ -160,7 +148,6 @@ class UserViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         user = request.user
         author = get_object_or_404(User, id=pk)
-        # recipes_limit = request.query_params.get('recipes_limit', None)
 
         if user == author:
             return Response(
@@ -179,9 +166,6 @@ class UserViewSet(viewsets.ModelViewSet):
             subscription = Subscription.objects.create(
                 user=user, subscribed_to=author
             )
-            # if recipes_limit is not None:
-            #     subscription.recipes_limit = int(recipes_limit)
-            #     subscription.save()
             serializer = self.get_serializer(
                 author, context={"request": request}
             )
@@ -213,8 +197,3 @@ class UserViewSet(viewsets.ModelViewSet):
             pages, many=True, context={"request": request}
         )
         return self.get_paginated_response(serializer.data)
-
-    # def get_permissions(self):
-    #     if self.action == "me":
-    #         return [IsAuthenticated()]
-    #     return super().get_permissions()

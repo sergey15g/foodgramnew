@@ -12,10 +12,10 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.versioning import AcceptHeaderVersioning
 
 from shopping_cart.serializers import ShoppingCartSerializer
 
@@ -26,14 +26,17 @@ from .models import (
     Recipe,
     RecipeIngredient,
     ShoppingCart,
+    ShortLink,
 )
+from .utils import generate_short_code
 from .pagination import RecipePagination
 from .serializers import (
     FavoriteRecipeSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
-    RecipeUpdateIngredientSerializer,
+    RecipeWriteSerializer,
 )
+from .permissions import IsAuthenticatedUser, IsAuthorOrReadOnly
 
 logger = logging.getLogger(__name__)
 
@@ -41,37 +44,29 @@ logger = logging.getLogger(__name__)
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by("id")
     serializer_class = RecipeReadSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     pagination_class = RecipePagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = RecipeFilter
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-
-        return queryset
+    versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
-        if self.action in ["update", "partial_update"]:
-            return RecipeUpdateIngredientSerializer
+        if self.action in ["create","update", "partial_update"]:
+            return RecipeWriteSerializer
         return super().get_serializer_class()
 
-    def create(self, request, *args, **kwargs):
-        if "image" not in request.data or request.data["image"] == "":
-            raise ValidationError({"image": "This field is required."})
-        # Обрабатываем POST запрос на создание нового рецепта
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED,
-                headers=headers,
-            )
-        return Response(
-            serializer.errors, status=status.HTTP_400_BAD_REQUEST
-        )
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)
+
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -80,47 +75,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         recipe = self.get_object()
         # Логика получения ссылки на рецепт
-        link = f"/api/recipes/{recipe.id}/"
+        long_link = f"/api/recipes/{recipe.id}/"
+        short_link = ShortLink.objects.filter(long_url=long_link).first()
+        if not short_link:
+            short_code = generate_short_code()
+            short_link = ShortLink.objects.create(long_url=long_link, short_code=short_code)
+        link = f"/s/{short_link.short_code}"
         return Response({"short-link": link}, status=status.HTTP_200_OK)
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", True)
-        instance = self.get_object()
-
-        # Проверка, является ли текущий пользователь автором рецепта
-        if instance.author != request.user:
-            raise PermissionDenied(
-                "You do not have permission to update this recipe."
-            )
-
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
-        if serializer.is_valid():
-            self.perform_update(serializer)
-            return Response(serializer.data)
-
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def partial_update(self, request, *args, **kwargs):
-        kwargs["partial"] = True
-        return self.update(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-
-        # Проверка, является ли текущий пользователь автором рецепта
-        if instance.author != request.user:
-            raise PermissionDenied(
-                "You do not have permission to update this recipe."
-            )
-
-        instance.delete()
-
-        return Response({"detail": "DELETED"}, status=204)
-
-    def perform_destroy(self, instance):
-        instance.delete()
 
     def _handle_post_request(self, request, pk, model, serializer_class):
         recipe = get_object_or_404(Recipe, id=pk)
@@ -190,13 +152,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         styles["Normal"].fontName = "Times-Roman"  # Установка шрифта
         elements = []
 
-        # Получаем все рецепты в корзине пользователя
-        shopping_cart_items = request.user.recipes_shopping_cart.all()
-        recipe_ids = [item.recipe.id for item in shopping_cart_items]
-
-        # Получаем все ингредиенты в рецептах в корзине пользователя
         ingredients = (
-            RecipeIngredient.objects.filter(recipe__id__in=recipe_ids)
+            RecipeIngredient.objects
+            .filter(recipe__in=request.user.recipes_shopping_cart.values_list(
+                'recipe', flat=True)
+            )
             .values("ingredient__name", "ingredient__measurement_unit")
             .annotate(total_amount=Sum("amount"))
             .order_by("ingredient__name")
@@ -233,83 +193,52 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.DjangoFilterBackend, SearchFilter]
     filterset_class = IngredientFilter
     pagination_class = None
+    versioning_class = AcceptHeaderVersioning
 
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def update(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def partial_update(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        return Response(
-            {"detail": "Method not allowed."},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED,
-        )
-
-    # @action(detail=True, methods=["post"])
-    # def favorite(self, request, pk=None):
-    #     instance = self.get_object()
-    #     request.user.favorite_recipe.recipe.add(instance)
-    #     serializer = self.get_serializer(instance)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #
-    # @favorite.mapping.delete
-    # def unfavorite(self, request, pk=None):
-    #     instance = self.get_object()
-    #     request.user.favorite_recipe.recipe.remove(instance)
-    #     return Response(status=status.HTTP_204_NO_CONTENT)
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)
 
 
 class FavoriteRecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeReadSerializer
+    permission_classes = [IsAuthenticatedUser]
+    versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
-        if self.action == "create" or self.action == "destroy":
+        if self.action in ("create", "destroy"):
             return FavoriteRecipeSerializer
         return super().get_serializer_class()
 
+    def get(self, request, *args, **kwargs):
+        version = request.version
+        if version == '1.0':
+            # Логика для версии 1.0
+            data = {"version": "1.0", "message": "This is version 1.0"}
+        elif version == '2.0':
+            # Логика для версии 2.0
+            data = {"version": "2.0", "message": "This is version 2.0"}
+        else:
+            data = {"error": "Unsupported version"}
+        return Response(data)
+
     def create(self, request, *args, **kwargs):
-        if request.user.is_anonymous:
-            return Response(status=401)
         instance = self.get_object()
-        _, created = Favorite.objects.get_or_create(
-            user=request.user, recipe=instance
-        )
-        if created:
-            serializer = self.get_serializer(instance)
+        data = {"user": request.user.id, "recipe": instance.id}
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(
             {"detail": "Recipe is already in favorites."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    def destroy(self, request, *args, **kwargs):
-        if request.user.is_anonymous:
-            return Response(status=401)
-        instance = self.get_object()
-        favorite = Favorite.objects.filter(
-            user=request.user, recipe=instance
-        ).first()
-        if favorite:
-            favorite.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(
-            {"detail": "Recipe is not in favorites."},
             status=status.HTTP_400_BAD_REQUEST,
         )

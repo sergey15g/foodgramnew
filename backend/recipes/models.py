@@ -16,6 +16,13 @@ from .constants import (
 
 User = get_user_model()
 
+class ShortLink(models.Model):
+    long_url = models.URLField()
+    short_code = models.CharField(max_length=10, unique=True)
+
+    def __str__(self):
+        return f"{self.short_code} -> {self.long_url}"
+
 
 class Ingredient(models.Model):
     name = models.CharField(
@@ -104,11 +111,11 @@ class Recipe(models.Model):
         validators=[
             MinValueValidator(
                 MIN_COOKING_TIME,
-                message="Время приготовления не может быть меньше 1 минуты",
+                message=f"Время приготовления не может быть меньше {MIN_COOKING_TIME} минуты",
             ),
             MaxValueValidator(
                 MAX_COOKING_TIME,
-                message="Время приготовления не может превышать 10000 минут",
+                message=f"Время приготовления не может превышать {MAX_COOKING_TIME} минут",
             ),
         ],
     )
@@ -142,11 +149,11 @@ class RecipeIngredient(models.Model):
         validators=[
             MinValueValidator(
                 MIN_AMOUNT,
-                message="Количество не может быть меньше 1",
+                message=f"Количество не может быть меньше {MIN_AMOUNT}",
             ),
             MaxValueValidator(
                 MAX_AMOUNT,
-                message="Количество не может превышать 10000",
+                message=f"Количество не может превышать {MAX_AMOUNT}",
             ),
         ],
     )
@@ -158,33 +165,3 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return (f"{self.ingredient.name} - "
                 f"{self.amount} {self.ingredient.measurement_unit}")
-
-
-class Subscription(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="recipes_subscriptions",
-        verbose_name="Юзверь",
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="recipes_subscribers",
-        verbose_name="Автор",
-        null=True,  # Разрешаем поле быть пустым
-        blank=True,  # Разрешаем поле быть пустым
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "author"],
-                name="unique_subscription_recipes",
-            )
-        ]
-        verbose_name = "Подписка"
-        verbose_name_plural = "Подписки"
-
-    def __str__(self):
-        return f"{self.user.username} подписан на {self.author.username}"
