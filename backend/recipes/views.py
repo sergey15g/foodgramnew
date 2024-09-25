@@ -50,7 +50,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
-        if self.action in ["create","update", "partial_update"]:
+        if self.action in ["create", "update", "partial_update"]:
             return RecipeWriteSerializer
         return super().get_serializer_class()
 
@@ -66,7 +66,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             data = {"error": "Unsupported version"}
         return Response(data)
 
-
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
@@ -78,10 +77,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         short_link = ShortLink.objects.filter(long_url=long_link).first()
         if not short_link:
             short_code = generate_short_code()
-            short_link = ShortLink.objects.create(long_url=long_link, short_code=short_code)
+            short_link = ShortLink.objects.create(long_url=long_link,
+                                                  short_code=short_code
+                                                  )
         link = f"/s/{short_link.short_code}"
         return Response({"short-link": link}, status=status.HTTP_200_OK)
-
 
     def _handle_post_request(self, request, pk, model, serializer_class):
         recipe = get_object_or_404(Recipe, id=pk)

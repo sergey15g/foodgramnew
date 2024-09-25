@@ -1,6 +1,7 @@
-from rest_framework import status, viewsets
+from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.versioning import AcceptHeaderVersioning
+from rest_framework.response import Response
 
 from .models import Tag
 from .serializers import TagViewSerializer

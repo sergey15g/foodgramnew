@@ -53,8 +53,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     )
     is_favorited = serializers.SerializerMethodField(
-                "check_is_in_favourited"
-            )
+        "check_is_in_favourited"
+    )
     is_in_shopping_cart = serializers.SerializerMethodField(
         "check_is_in_shopping_cart"
     )
@@ -268,23 +268,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
         return instance
 
-    def validate_ingredients(self, value):
-
-        ingredient_ids = [
-
-            ingredient["ingredient"].id for ingredient in value
-
-        ]
-
-        if len(ingredient_ids) != len(set(ingredient_ids)):
-            raise serializers.ValidationError(
-
-                "Дублирование ингредиентов не допускается."
-
-            )
-
-        return value
-
     def check_is_in_shopping_cart(self, obj):
         if self.context.get("request") is None:
             return False
@@ -303,7 +286,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             return False
 
         user = self.context.get("request").user
-        if user.is_authenticated and user.favorites.filter(recipe=obj).exists():
+        if (user.is_authenticated
+                and user.favorites.filter(recipe=obj).exists()):
             return True
 
         return False
@@ -355,7 +339,6 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             return obj.is_subscribed(user)
         return False
 
-
     def get_image(self, obj):
         if obj.image:
             return self.context["request"].build_absolute_uri(obj.image.url)
@@ -379,7 +362,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             return False
 
         user = self.context.get("request").user
-        if user.is_authenticated and user.favorites.filter(recipe=obj).exists():
+        if (user.is_authenticated
+                and user.favorites.filter(recipe=obj).exists()):
             return True
 
         return False

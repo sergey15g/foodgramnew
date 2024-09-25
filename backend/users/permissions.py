@@ -4,6 +4,7 @@ from rest_framework.permissions import (
     SAFE_METHODS
 )
 
+
 class IsOwnerOrReadOnly(IsAuthenticated):
     """
     Пользователь может изменять только свои данные.
