@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: django_user
       POSTGRES_PASSWORD: django_password
       POSTGRES_DB: django_db
-      DB_HOST: "${DB_HOST}"  # Здесь указывается хост PostgreSQL сервера
+      DB_HOST: "${DB_HOST}"
       DB_PORT: 5432
       SECRET_KEY: "${SECRET_KEY}"
       DEBUG: "${DEBUG}"
