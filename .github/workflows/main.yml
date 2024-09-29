@@ -45,7 +45,7 @@ jobs:
           script: |
             sudo docker pull sergey15g/foodgramnew_backend:latest
             sudo docker pull sergey15g/foodgramnew_frontend:latest
-            sudo docker-compose -f /foodgramnew/infra/docker-compose.yml down  # Указываем путь к docker-compose.yml
+            sudo docker-compose -f /foodgramnew/docker-compose.yml down  # Указываем путь к docker-compose.yml
 
       - name: Start Docker containers
         uses: appleboy/ssh-action@master
