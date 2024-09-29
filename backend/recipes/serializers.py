@@ -1,22 +1,15 @@
-from django.core.exceptions import (
-    ValidationError as DjangoValidationError,
-)
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer
+
 from tags.serializers import Tag, TagSerializer
 from users.models import Subscription, User
 from users.serializers import UserSerializer
 
 from .fields import Base64ImageField
-from .models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    ShoppingCart,
-)
+from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart
 
 
 class IngredientSerializer(serializers.ModelSerializer):

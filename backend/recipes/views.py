@@ -13,24 +13,14 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
 
 from utils.mixins import APIVersionMixin
 
 from .filters import IngredientFilter, RecipeFilter
-from .models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    ShoppingCart,
-    ShortLink,
-)
+from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, ShortLink
 from .pagination import RecipePagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -38,8 +28,8 @@ from .serializers import (
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
-    ShoppingCartSerializer,
     ShoppingCartCreateSerializer,
+    ShoppingCartSerializer,
 )
 from .utils import generate_short_code
 
