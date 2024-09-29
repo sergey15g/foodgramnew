@@ -2,7 +2,6 @@
 from django.contrib.auth import get_user_model
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
-from recipes.serializers import SubscribeSerializer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
@@ -12,6 +11,9 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
+
+from recipes.serializers import SubscribeSerializer
+from utils.mixins import APIVersionMixin
 
 from .models import Subscription
 from .pagination import UserPagination
@@ -27,7 +29,7 @@ from .serializers import (
 User = get_user_model()
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = UserPagination
@@ -51,16 +53,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return UserSerializer
 
     def get(self, request, *args, **kwargs):
-        version = request.version
-        if version == '1.0':
-            # Логика для версии 1.0
-            data = {"version": "1.0", "message": "This is version 1.0"}
-        elif version == '2.0':
-            # Логика для версии 2.0
-            data = {"version": "2.0", "message": "This is version 2.0"}
-        else:
-            data = {"error": "Unsupported version"}
-        return Response(data)
+        return self.get_versioned_response(request)
 
     def get_permissions(self):
         if self.action in ["create", "get"]:

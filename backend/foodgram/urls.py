@@ -8,5 +8,4 @@ urlpatterns = [
     path("api/", include("users.urls")),
     path("api/", include("tags.urls")),
     path("api/", include("recipes.urls")),
-    path("api/", include("shopping_cart.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

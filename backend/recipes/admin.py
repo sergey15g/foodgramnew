@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin import display
-from tags.models import Tag
 from unfold.admin import ModelAdmin
+
+from tags.models import Tag
 
 from .models import Favorite, Ingredient, Recipe, RecipeIngredient
 

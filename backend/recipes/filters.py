@@ -1,4 +1,5 @@
 from django_filters import rest_framework as filters
+
 from tags.models import Tag
 
 from .models import Ingredient, Recipe
@@ -49,4 +50,4 @@ class IngredientFilter(filters.FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = ["name"]
+        fields = ("name",)

@@ -13,10 +13,14 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
-from shopping_cart.serializers import ShoppingCartSerializer
+
+from utils.mixins import APIVersionMixin
 
 from .filters import IngredientFilter, RecipeFilter
 from .models import (
@@ -28,19 +32,20 @@ from .models import (
     ShortLink,
 )
 from .pagination import RecipePagination
-from .permissions import IsAuthenticatedUser, IsAuthorOrReadOnly
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     FavoriteRecipeSerializer,
     IngredientSerializer,
     RecipeReadSerializer,
     RecipeWriteSerializer,
+    ShoppingCartSerializer,
 )
 from .utils import generate_short_code
 
 logger = logging.getLogger(__name__)
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by("id")
     serializer_class = RecipeReadSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -52,19 +57,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
             return RecipeWriteSerializer
-        return super().get_serializer_class()
+        # Для чтения (list, retrieve и т.д.) используем ReadSerializer
+        return RecipeReadSerializer
 
     def get(self, request, *args, **kwargs):
-        version = request.version
-        if version == '1.0':
-            # Логика для версии 1.0
-            data = {"version": "1.0", "message": "This is version 1.0"}
-        elif version == '2.0':
-            # Логика для версии 2.0
-            data = {"version": "2.0", "message": "This is version 2.0"}
-        else:
-            data = {"error": "Unsupported version"}
-        return Response(data)
+        return self.get_versioned_response(request)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -185,7 +182,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(APIVersionMixin, viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -195,22 +192,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     versioning_class = AcceptHeaderVersioning
 
     def get(self, request, *args, **kwargs):
-        version = request.version
-        if version == '1.0':
-            # Логика для версии 1.0
-            data = {"version": "1.0", "message": "This is version 1.0"}
-        elif version == '2.0':
-            # Логика для версии 2.0
-            data = {"version": "2.0", "message": "This is version 2.0"}
-        else:
-            data = {"error": "Unsupported version"}
-        return Response(data)
+        return self.get_versioned_response(request)
 
 
-class FavoriteRecipeViewSet(viewsets.ModelViewSet):
+class FavoriteRecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeReadSerializer
-    permission_classes = [IsAuthenticatedUser]
+    permission_classes = [IsAuthenticated]
     versioning_class = AcceptHeaderVersioning
 
     def get_serializer_class(self):
@@ -219,16 +207,7 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
         return super().get_serializer_class()
 
     def get(self, request, *args, **kwargs):
-        version = request.version
-        if version == '1.0':
-            # Логика для версии 1.0
-            data = {"version": "1.0", "message": "This is version 1.0"}
-        elif version == '2.0':
-            # Логика для версии 2.0
-            data = {"version": "2.0", "message": "This is version 2.0"}
-        else:
-            data = {"error": "Unsupported version"}
-        return Response(data)
+        return self.get_versioned_response(request)
 
     def create(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -241,3 +220,70 @@ class FavoriteRecipeViewSet(viewsets.ModelViewSet):
             {"detail": "Recipe is already in favorites."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class ShoppingCartViewSet(APIVersionMixin, viewsets.ModelViewSet):
+    queryset = ShoppingCart.objects.all()
+    permission_classes = [IsAuthenticated]
+    versioning_class = AcceptHeaderVersioning
+
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            return ShoppingCartSerializer
+        return ShoppingCartCreateSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.get_versioned_response(request)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        return ShoppingCart.objects.filter(user=self.request.user)
+
+    @action(
+        detail=True,
+        methods=["get", "post", "delete"],
+        url_path="shopping_cart",
+    )
+    def shopping_cart(self, request, pk=None):
+        try:
+            recipe = Recipe.objects.get(id=pk)
+        except Recipe.DoesNotExist:
+            return Response(
+                {"detail": "Recipe not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        user = request.user
+
+        if request.method == "POST":
+            shopping_cart, created = ShoppingCart.objects.get_or_create(
+                user=user, recipe=recipe
+            )
+            serializer = ShoppingCartSerializer(shopping_cart)
+            return Response(
+                serializer.data,
+                status=(
+                    status.HTTP_201_CREATED
+                    if created
+                    else status.HTTP_200_OK
+                ),
+            )
+
+        if request.method == "DELETE":
+            shopping_cart = ShoppingCart.objects.filter(
+                user=user, recipe=recipe
+            )
+            if shopping_cart.exists():
+                shopping_cart.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Recipe not in shopping cart"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+
+class ShoppingCartReadViewSet(viewsets.ModelViewSet):
+    queryset = ShoppingCart.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]

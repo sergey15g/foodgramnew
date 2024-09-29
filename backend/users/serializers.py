@@ -1,8 +1,9 @@
 # users/serializers.py
 
 from django.contrib.auth import get_user_model
-from recipes.fields import Base64ImageField
 from rest_framework import serializers
+
+from recipes.fields import Base64ImageField
 
 from .models import Subscription
 
@@ -23,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_subscribed",
             "avatar",
         )
-        read_only_fields = ["email"]
+        read_only_fields = ("email",)
 
     def get_is_subscribed(self, obj):
         request = self.context.get("request")

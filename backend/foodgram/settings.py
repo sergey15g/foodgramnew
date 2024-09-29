@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     "users",
     "tags",
     "recipes",
-    "shopping_cart",
     "django_filters",
 ]
 

@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+
 from tags.models import Tag
 
 from .constants import (
@@ -144,7 +145,17 @@ class RecipeIngredient(models.Model):
         Recipe, on_delete=models.CASCADE, verbose_name="Рецепт"
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, verbose_name="Ингридиент"
+        Ingredient, on_delete=models.CASCADE, verbose_name="Ингридиент",
+        validators=[
+            MinValueValidator(
+                MIN_AMOUNT,
+                message=f"Количество не может быть меньше {MIN_AMOUNT}",
+            ),
+            MaxValueValidator(
+                MAX_AMOUNT,
+                message=f"Количество не может превышать {MAX_AMOUNT}",
+            ),
+        ],
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name="Кол-во",
