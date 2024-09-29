@@ -39,6 +39,7 @@ from .serializers import (
     RecipeReadSerializer,
     RecipeWriteSerializer,
     ShoppingCartSerializer,
+    ShoppingCartCreateSerializer,
 )
 from .utils import generate_short_code
 
@@ -74,9 +75,9 @@ class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
         short_link = ShortLink.objects.filter(long_url=long_link).first()
         if not short_link:
             short_code = generate_short_code()
-            short_link = ShortLink.objects.create(long_url=long_link,
-                                                  short_code=short_code
-                                                  )
+            short_link = ShortLink.objects.create(
+                long_url=long_link, short_code=short_code
+            )
         link = f"/s/{short_link.short_code}"
         return Response({"short-link": link}, status=status.HTTP_200_OK)
 
@@ -149,9 +150,10 @@ class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
         elements = []
 
         ingredients = (
-            RecipeIngredient.objects
-            .filter(recipe__in=request.user.recipes_shopping_cart.values_list(
-                'recipe', flat=True)
+            RecipeIngredient.objects.filter(
+                recipe__in=request.user.recipes_shopping_cart.values_list(
+                    'recipe', flat=True
+                )
             )
             .values("ingredient__name", "ingredient__measurement_unit")
             .annotate(total_amount=Sum("amount"))
@@ -159,7 +161,9 @@ class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
         )
 
         if ingredients:
-            elements.append(Paragraph("Список покупок:", styles["Normal"]))
+            elements.append(
+                Paragraph("Список покупок:", styles["Normal"])
+            )
             elements.append(Spacer(1, 12))
 
             for index, ingredient in enumerate(ingredients, start=1):
@@ -215,7 +219,9 @@ class FavoriteRecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
         return Response(
             {"detail": "Recipe is already in favorites."},
             status=status.HTTP_400_BAD_REQUEST,
