@@ -63,6 +63,10 @@ jobs:
             cd infra/
             sudo docker-compose stop
             sudo docker-compose rm backend
+      - name: Copy docker-compose.yml to server
+        run: |
+          scp -i ${{ secrets.SSH_KEY }} /infra/docker-compose.yml ${{ secrets.USER }}@${{ secrets.HOST }}:/foodgramnew/infra/
+
       - name: docker-compose up
         uses: appleboy/ssh-action@master
         with:
