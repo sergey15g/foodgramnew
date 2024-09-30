@@ -10,7 +10,7 @@ services:
       - ./.env
 
   backend:
-    image: sergey15g/foodgram_backend:latest
+    image: sergey15g/foodgramnew_backend:latest
     restart: always
     volumes:
       - data_value:/code/data/
@@ -22,7 +22,7 @@ services:
       - ./.env
 
   frontend:
-    image: sergey15g/foodgram_frontend:latest
+    image: sergey15g/foodgramnew_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
