@@ -1,8 +1,3 @@
-import base64
-
-from django.core.files.base import ContentFile
-from rest_framework import serializers
-
 
 import base64
 import uuid
@@ -28,4 +23,3 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name=file_name)
 
         return super().to_internal_value(data)
-

@@ -122,11 +122,67 @@ class SetPasswordSerializer(serializers.Serializer):
         user.save()
 
 
-class SubscriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subscription
-        fields = ("id", "user", "subscribed_to")
+# class SubscriptionSerializer(serializers.ModelSerializer):
+#     is_subscribed = serializers.SerializerMethodField()
+#     recipes = serializers.SerializerMethodField()
+#     recipes_count = serializers.ReadOnlyField(source="recipes.count")
+#     avatar = serializers.SerializerMethodField()
+#
+#     class Meta:
+#         model = User
+#         fields = (
+#             "email",
+#             "id",
+#             "username",
+#             "first_name",
+#             "last_name",
+#             "is_subscribed",
+#             "recipes",
+#             "recipes_count",
+#             "avatar",
+#         )
+#
+#     def validate(self, data):
+#         user = data["user"]
+#         subscribed_to = data["subscribed_to"]
+#
+#         if user == subscribed_to:
+#             raise serializers.ValidationError(
+#                 "Нельзя подписаться на самого себя."
+#             )
+#
+#         if Subscription.objects.filter(user=user,
+#                                        subscribed_to=subscribed_to).exists():
+#             raise serializers.ValidationError(
+#                 "Вы уже подписаны на этого пользователя."
+#             )
+#
+#         return data
 
 
 class AvatarSerializer(serializers.Serializer):
     avatar = Base64ImageField(required=True)
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    is_subscribed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['user', 'is_subscribed']
+
+    def validate(self, data):
+        user = data['user']
+        author = data['is_subscribed']
+
+        if user == author:
+            raise serializers.ValidationError("Нельзя подписаться на самого себя.")
+
+        if Subscription.objects.filter(user=user, subscribed_to=author).exists():
+            raise serializers.ValidationError("Вы уже подписаны на этого пользователя.")
+
+        return data
+
+    def create(self, validated_data):
+        return Subscription.objects.create(**validated_data)

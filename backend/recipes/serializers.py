@@ -5,11 +5,18 @@ from rest_framework.fields import SerializerMethodField
 from rest_framework.serializers import ModelSerializer
 
 from tags.serializers import Tag, TagSerializer
+from django.shortcuts import get_object_or_404
 from users.models import Subscription, User
 from users.serializers import UserSerializer
 
 from .fields import Base64ImageField
-from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart
+from .models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -179,11 +186,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["tags"] = TagSerializer(
-            instance.tags.all(), many=True
-        ).data
-        return representation
+         return RecipeReadSerializer(instance).data
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -347,7 +350,8 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        recipe = Favorite.objects.get(pk=representation["id"]).recipe
+        favorite = get_object_or_404(Favorite, pk=representation["id"])
+        recipe = favorite.recipe
         short_serializer = RecipeCustSerializer(recipe)
         return short_serializer.data
 
@@ -424,21 +428,29 @@ class RecipeCustSerializer(ModelSerializer):
         fields = ("id", "name", "image", "cooking_time")
 
 
+class RecipeShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = ("id", "name", "image", "cooking_time")
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Форматируем URL изображения, если оно присутствует
+        representation["image"] = instance.image.url \
+            if instance.image else None
+        return representation
+
+
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    # recipe = serializers.SerializerMethodField()
+    recipe = RecipeShortSerializer(source='recipe', read_only=True)
 
     class Meta:
         model = ShoppingCart
-        fields = ("id", "user", "recipe")
+        fields = ("recipe",)  # Оставляем только поле recipe
 
     def to_representation(self, instance):
-        recipe = instance.recipe
-        return {
-            "id": recipe.id,
-            "name": recipe.name,
-            "image": recipe.image.url if recipe.image else None,
-            "cooking_time": recipe.cooking_time,
-        }
+        # Возвращаем сериализованные данные рецепта
+        return RecipeShortSerializer(instance.recipe).data
 
 
 class ShoppingCartCreateSerializer(serializers.ModelSerializer):

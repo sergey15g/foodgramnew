@@ -13,14 +13,24 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
 from rest_framework.versioning import AcceptHeaderVersioning
 
 from utils.mixins import APIVersionMixin
 
 from .filters import IngredientFilter, RecipeFilter
-from .models import Favorite, Ingredient, Recipe, RecipeIngredient, ShoppingCart, ShortLink
+from .models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    ShortLink,
+)
 from .pagination import RecipePagination
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -37,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 
 class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
-    queryset = Recipe.objects.all().order_by("id")
+    queryset = Recipe.objects.order_by("id")
     serializer_class = RecipeReadSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     pagination_class = RecipePagination
