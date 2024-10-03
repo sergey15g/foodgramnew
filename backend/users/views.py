@@ -143,64 +143,29 @@ class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
         user = request.user
         author = get_object_or_404(User, id=pk)
 
-        if user == author:
-            return Response(
-
-                {"errors": "Нельзя подписаться на самого себя."},
-
-                status=status.HTTP_400_BAD_REQUEST,
-
-            )
-
         if request.method == "POST":
-
-            if Subscription.objects.filter(
-
-                    user=user, subscribed_to=author
-
-            ).exists():
-                return Response(
-
-                    {"errors": "Вы уже подписаны на этого пользователя."},
-
-                    status=status.HTTP_400_BAD_REQUEST,
-
-                )
-
-            subscription = Subscription.objects.create(
-
-                user=user, subscribed_to=author
-
-            )
-
-            serializer = self.get_serializer(
-
-                author, context={"request": request}
-
-            )
+            # Использование сериализатора для создания подписки
+            serializer = SubscribeSerializer(author, context={"request": request})
+            serializer.validate(data={})  # Валидация без данных, так как данные не передаются
+            Subscription.objects.create(user=user, subscribed_to=author)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
+            # Использование сериализатора для валидации существования подписки
+            serializer = SubscribeSerializer(author, context={"request": request})
+            serializer.validate_for_delete(user=user, author=author)
 
-            subscription = Subscription.objects.filter(
-
-                user=user, subscribed_to=author
-
-            ).first()
-
+            # Удаление подписки
+            subscription = Subscription.objects.filter(user=user, subscribed_to=author).first()
             if subscription:
                 subscription.delete()
-
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response(
-
-            {"errors": "Подписка не найдена."},
-
-            status=status.HTTP_400_BAD_REQUEST,
-
-        )
+            return Response(
+                {"errors": "Подписка не найдена."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
     @action(
         detail=False,

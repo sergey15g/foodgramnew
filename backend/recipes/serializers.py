@@ -342,6 +342,26 @@ class SubscribeSerializer(serializers.ModelSerializer):
             )
         return None
 
+    def validate(self, data):
+        request = self.context.get("request")
+        user = request.user
+        author = self.instance
+
+        # Проверка, что пользователь не подписывается на самого себя
+        if user == author:
+            raise serializers.ValidationError("Нельзя подписаться на самого себя.")
+
+        # Проверка, что подписка уже не существует
+        if Subscription.objects.filter(user=user, subscribed_to=author).exists():
+            raise serializers.ValidationError("Вы уже подписаны на этого пользователя.")
+
+        return data
+
+    def validate_for_delete(self, user, author):
+        # Проверка существования подписки
+        if not Subscription.objects.filter(user=user, subscribed_to=author).exists():
+            raise serializers.ValidationError("Подписка не найдена.")
+
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     class Meta:
