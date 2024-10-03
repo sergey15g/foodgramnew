@@ -9,6 +9,8 @@ from django_filters import rest_framework as filters
 from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -44,6 +46,8 @@ from .serializers import (
 from .utils import generate_short_code
 
 logger = logging.getLogger(__name__)
+
+pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
 
 
 class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
