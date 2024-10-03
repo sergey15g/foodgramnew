@@ -164,7 +164,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 recipe_ingredients.append(recipe_ingredient)
             except DjangoValidationError as e:
                 raise serializers.ValidationError(
-                    {"ingredients": e.messages}
+                    {"amount": e.messages}
                 )
 
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
@@ -315,6 +315,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             "recipes_count",
             "avatar",
         )
+        read_only_fields = ('email', 'username', 'first_name', 'last_name')
 
     def get_is_subscribed(self, obj):
         request = self.context.get("request")
@@ -345,7 +346,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     def validate(self, data):
         request = self.context.get("request")
         user = request.user
-        author = self.instance
+        author = self.instance  # Получаем автора из переданных данных
 
         # Проверка, что пользователь не подписывается на самого себя
         if user == author:
@@ -369,6 +370,22 @@ class SubscribeSerializer(serializers.ModelSerializer):
                                            subscribed_to=author
                                            ).exists():
             raise serializers.ValidationError("Подписка не найдена.")
+
+    def validate_for_delete(self, user, author):
+        # Проверка существования подписки
+        if not Subscription.objects.filter(user=user,
+                                           subscribed_to=author
+                                           ).exists():
+            raise serializers.ValidationError("Подписка не найдена.")
+
+    def create(self, validated_data):
+        # Создаем объект подписки
+        user = self.context['request'].user
+        author = self.instance  # Используем self.instance для автора
+
+        # Создание подписки
+        subscription = Subscription.objects.create(user=user, subscribed_to=author)
+        return subscription
 
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
@@ -464,8 +481,10 @@ class RecipeShortSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         # Форматируем URL изображения, если оно присутствует
-        representation["image"] = instance.image.url \
+        representation["image"] = (
+            instance.image.url
             if instance.image else None
+        )
         return representation
 
 

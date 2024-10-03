@@ -143,12 +143,25 @@ class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
         user = request.user
         author = get_object_or_404(User, id=pk)
 
+        if user == author:
+            return Response(
+                {"errors": "Нельзя подписаться на самого себя."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if request.method == "POST":
             # Использование сериализатора для создания подписки
-            serializer = SubscribeSerializer(
-                author, context={"request": request}
-            )
-            serializer.validate(data={})  # Валидация без данных
+            data = {
+                "subscribed_to": author.id
+            }
+
+            # Передаем данные в сериализатор
+            serializer = SubscribeSerializer(author, data=data, context={"request": request})
+
+            # Вызов метода is_valid для проверки всех валидаторов
+            serializer.is_valid(raise_exception=True)
+
+            # Создание подписки, если валидаторы прошли успешно
             Subscription.objects.create(user=user, subscribed_to=author)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)

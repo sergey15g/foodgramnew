@@ -146,16 +146,6 @@ class RecipeIngredient(models.Model):
     )
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE, verbose_name="Ингридиент",
-        validators=[
-            MinValueValidator(
-                MIN_AMOUNT,
-                message=f"Количество не может быть меньше {MIN_AMOUNT}",
-            ),
-            MaxValueValidator(
-                MAX_AMOUNT,
-                message=f"Количество не может превышать {MAX_AMOUNT}",
-            ),
-        ],
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name="Кол-во",
