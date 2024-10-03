@@ -145,19 +145,25 @@ class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
 
         if request.method == "POST":
             # Использование сериализатора для создания подписки
-            serializer = SubscribeSerializer(author, context={"request": request})
-            serializer.validate(data={})  # Валидация без данных, так как данные не передаются
+            serializer = SubscribeSerializer(author, context={"request":
+                                                                  request}
+                                             )
+            serializer.validate(data={})  # Валидация без данных
             Subscription.objects.create(user=user, subscribed_to=author)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if request.method == "DELETE":
             # Использование сериализатора для валидации существования подписки
-            serializer = SubscribeSerializer(author, context={"request": request})
+            serializer = SubscribeSerializer(author, context={"request":
+                                                                  request}
+                                             )
             serializer.validate_for_delete(user=user, author=author)
 
             # Удаление подписки
-            subscription = Subscription.objects.filter(user=user, subscribed_to=author).first()
+            subscription = Subscription.objects.filter(user=user,
+                                                       subscribed_to=author
+                                                       ).first()
             if subscription:
                 subscription.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)

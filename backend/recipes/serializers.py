@@ -349,17 +349,25 @@ class SubscribeSerializer(serializers.ModelSerializer):
 
         # Проверка, что пользователь не подписывается на самого себя
         if user == author:
-            raise serializers.ValidationError("Нельзя подписаться на самого себя.")
+            raise serializers.ValidationError(
+                "Нельзя подписаться на самого себя."
+            )
 
         # Проверка, что подписка уже не существует
-        if Subscription.objects.filter(user=user, subscribed_to=author).exists():
-            raise serializers.ValidationError("Вы уже подписаны на этого пользователя.")
+        if Subscription.objects.filter(user=user,
+                                       subscribed_to=author
+                                       ).exists():
+            raise serializers.ValidationError(
+                "Вы уже подписаны на этого пользователя."
+            )
 
         return data
 
     def validate_for_delete(self, user, author):
         # Проверка существования подписки
-        if not Subscription.objects.filter(user=user, subscribed_to=author).exists():
+        if not Subscription.objects.filter(user=user,
+                                           subscribed_to=author
+                                           ).exists():
             raise serializers.ValidationError("Подписка не найдена.")
 
 
