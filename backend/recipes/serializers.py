@@ -186,7 +186,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def to_representation(self, instance):
-         return RecipeReadSerializer(instance).data
+        return RecipeReadSerializer(instance).data
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):

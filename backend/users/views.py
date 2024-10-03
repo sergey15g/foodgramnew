@@ -145,9 +145,9 @@ class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
 
         if request.method == "POST":
             # Использование сериализатора для создания подписки
-            serializer = SubscribeSerializer(author, context={"request":
-                                                                  request}
-                                             )
+            serializer = SubscribeSerializer(
+                author, context={"request": request}
+            )
             serializer.validate(data={})  # Валидация без данных
             Subscription.objects.create(user=user, subscribed_to=author)
 
@@ -155,9 +155,9 @@ class UserViewSet(APIVersionMixin, viewsets.ModelViewSet):
 
         if request.method == "DELETE":
             # Использование сериализатора для валидации существования подписки
-            serializer = SubscribeSerializer(author, context={"request":
-                                                                  request}
-                                             )
+            serializer = SubscribeSerializer(
+                author, context={"request": request}
+            )
             serializer.validate_for_delete(user=user, author=author)
 
             # Удаление подписки

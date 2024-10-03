@@ -47,7 +47,7 @@ from .utils import generate_short_code
 
 logger = logging.getLogger(__name__)
 
-pdfmetrics.registerFont(TTFont("Times-Roman", "times.ttf"))
+pdfmetrics.registerFont(TTFont("Arial", "data/arial.ttf"))
 
 
 class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
@@ -150,7 +150,7 @@ class RecipeViewSet(APIVersionMixin, viewsets.ModelViewSet):
             bottomMargin=18,
         )
         styles = getSampleStyleSheet()
-        styles["Normal"].fontName = "Times-Roman"  # Установка шрифта
+        styles["Normal"].fontName = "Arial"  # Установка шрифта
         elements = []
 
         ingredients = (
